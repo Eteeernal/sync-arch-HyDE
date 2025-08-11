@@ -17,6 +17,7 @@ from .git_ops import GitOperations
 from .stow_ops import StowOperations
 from .conflicts import ConflictResolver
 from .path_utils import PathUtils
+from .context import SyncArchContext
 from .utils import SyncLock, setup_logging
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     'StowOperations',
     'ConflictResolver',
     'PathUtils',
+    'SyncArchContext',
     'SyncLock',
     'setup_logging'
 ]

@@ -1,464 +1,436 @@
-# Sync-Arch 🔄
+# 🔄 Sync-Arch 
 
-Sistema de sincronización inteligente de dotfiles entre múltiples equipos Arch Linux con backup automático y deploy seguro.
+Sistema de sincronización inteligente de dotfiles entre múltiples equipos Arch Linux con backup automático, deploy seguro y arquitectura modular avanzada.
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![Bash](https://img.shields.io/badge/Bash-4.0+-green.svg)](https://www.gnu.org/software/bash/)
 [![GNU Stow](https://img.shields.io/badge/GNU%20Stow-Required-orange.svg)](https://www.gnu.org/software/stow/)
+[![Systemd](https://img.shields.io/badge/Systemd-User%20Services-red.svg)](https://systemd.io/)
+
+---
 
 ## 🎯 **Características Principales**
 
 ### ✨ **Sistema Completo de Dotfiles**
 - 🔄 **Sincronización bidireccional** automática entre equipos
-- 🏠 **Enfoque HOME completo** - sincroniza todo `$HOME` con excepciones
-- 🖥️ **Configuraciones por hostname** para diferencias específicas
-- 🛡️ **Backup automático** por hostname antes de cambios
+- 🏠 **Enfoque HOME completo** - sincroniza todo `$HOME` con excepciones granulares
+- 🖥️ **Configuraciones por hostname** para diferencias específicas de cada máquina
+- 🛡️ **Backup automático** por hostname antes de cambios críticos
 - 🔗 **Symlinks con GNU Stow** para edición en tiempo real
+- ⚡ **Detección de cambios inteligente** con hashing SHA256
 
 ### 🚀 **CLI Global Profesional**
 - 🌍 **Comando global `sync-arch`** ejecutable desde cualquier directorio
-- 🔍 **Detección automática** del proyecto sync-arch
-- ⚡ **Autocompletado** para Bash y Zsh
-- 🎨 **Interfaz con colores** y ayuda completa
-- 📋 **Instalador automático** con un solo comando
+- 🔍 **Modo dry-run por defecto** para máxima seguridad
+- 🎨 **Interfaz colorizada** con mensajes informativos claros
+- 📊 **Estado detallado** del repositorio y sincronización
+- 🔧 **Autocompletado** para Bash y Zsh
 
-### 🛡️ **Deploy Seguro con Backup**
-- 📦 **Backup automático** antes de cualquier deploy
-- 🔄 **Rollback completo** en caso de problemas
-- 🏠 **Un backup por hostname** para evitar conflictos
-- ✅ **Dry-run por defecto** para máxima seguridad
-- 🔍 **Detección de conflictos** automática
+### 🏗️ **Arquitectura Modular Avanzada**
+- 📦 **Módulos core especializados** (config, git, stow, conflicts, etc.)
+- 🎯 **Comandos modulares** (discover, validate, cleanup, deploy, etc.)
+- 🔧 **Context manager centralizado** para gestión de dependencias
+- 🔄 **Reutilización máxima de código** sin duplicación
+- 🧪 **Fácil testing y extensibilidad**
 
-### 🏗️ **Arquitectura Modular**
-- 📁 **Core modules**: Config, Git, Stow, Conflicts, PathUtils
-- 🎯 **Commands**: Deploy, Validate, Cleanup, Discover, Status
-- 🔄 **Reutilización de código** eliminando duplicidad
-- 🛠️ **Extensibilidad** fácil para nuevas funcionalidades
+### ⚙️ **Automatización Inteligente**
+- 🔄 **Servicios systemd** para sincronización automática
+- 🚀 **Startup sync** - sincroniza al iniciar sesión
+- 💾 **Shutdown sync** - guarda cambios antes de apagar/suspender
+- 🔐 **Lockfile** para prevenir ejecuciones simultáneas
+- 📝 **Logging detallado** con rotación automática
 
-## 📦 **Instalación Rápida**
+---
 
-### **Paso 1: Clonar el Repositorio**
+## 📥 **Instalación Unificada**
+
+### 🚀 **Instalación Simple en Un Solo Comando**
+
 ```bash
-git clone <tu-repo-privado> ~/proyectos/sync-arch
-cd ~/proyectos/sync-arch
+# Clonar el repositorio
+git clone <tu-repositorio-privado> sync-arch
+cd sync-arch
+
+# Ejecutar instalador unificado
+./install.sh
 ```
 
-### **Paso 2: Instalar CLI Global**
-```bash
-# Instalación automática con permisos de administrador
-./install-cli.sh
+El instalador unificado configurará automáticamente:
+- ✅ Dependencias del sistema (git, stow, python3)
+- ✅ Estructura de dotfiles (common + hostname)
+- ✅ Servicios systemd user
+- ✅ **Comando CLI global `sync-arch`**
+- ✅ Sincronización inicial
+- ✅ Configuración de autocompletado
 
-# Verificar instalación
-sync-arch version
-sync-arch --help
-```
+### 📋 **Dependencias**
+- `git` - Control de versiones
+- `stow` - Gestión de symlinks  
+- `python3` (≥3.8) - Scripts principales
+- `systemd` - Servicios automáticos
 
-### **Paso 3: Configurar Baseline**
-```bash
-# Si es tu primer equipo, generar baseline
-python3 scripts/install.py
+---
 
-# Si es un equipo adicional
-sync-arch deploy --no-dry-run
-```
+## 🎮 **Uso del Sistema**
 
-## 🎮 **Uso del CLI Global**
-
-### **Comandos Principales**
+### 🌍 **Comando Global Principal**
 
 ```bash
-# 🔍 Verificar estado del sistema
-sync-arch status
+# Sincronización manual (dry-run por defecto)
+sync-arch
 
-# ✅ Validar configuración actual
-sync-arch validate
-
-# 🚀 Deploy seguro con backup automático
-sync-arch deploy                    # [DRY-RUN] Ver plan
-sync-arch deploy --no-dry-run       # Ejecutar deploy real
-
-# 📦 Gestión de backups
-sync-arch list-backups              # Ver backups disponibles
-sync-arch rollback                  # Rollback último backup
-sync-arch rollback backup_20250811_143500  # Rollback específico
-
-# 🔍 Descubrir archivos nuevos
-sync-arch discover                  # Interactivo para nuevos dotfiles
-
-# 🧹 Limpieza automática
-sync-arch cleanup                   # [DRY-RUN] Ver archivos a limpiar
-sync-arch cleanup --no-dry-run      # Limpiar archivos ignorados
-
-# 🔄 Sincronización manual
-sync-arch                          # Sync manual [DRY-RUN]
-sync-arch --no-dry-run             # Sync manual real
-```
-
-### **Casos de Uso Comunes**
-
-#### **🆕 Configurar Nuevo Equipo**
-```bash
-# 1. Clonar repo en nuevo equipo
-git clone <repo> ~/proyectos/sync-arch
-cd ~/proyectos/sync-arch
-
-# 2. Instalar CLI
-./install-cli.sh
-
-# 3. Ver qué se va a hacer
-sync-arch validate
-sync-arch deploy
-
-# 4. Deploy real con backup automático
-sync-arch deploy --no-dry-run
-```
-
-#### **🔄 Uso Diario**
-```bash
-# Ver estado antes de trabajar
-sync-arch status
-
-# Sincronizar cambios
+# Sincronización real (aplicar cambios)
 sync-arch --no-dry-run
 
-# Descubrir nuevos archivos de configuración
-sync-arch discover
+# Ver ayuda completa
+sync-arch --help
+
+# Mostrar estado del repositorio
+sync-arch status
 ```
 
-#### **🆘 Recuperación de Problemas**
+### 🔍 **Comandos Especializados**
+
 ```bash
-# Ver backups disponibles
-sync-arch list-backups
+# === GESTIÓN DE ARCHIVOS ===
+sync-arch discover          # Descubrir archivos no gestionados
+sync-arch cleanup           # Limpiar archivos ignorados del repo
+sync-arch validate          # Validar consistencia config.json vs repo vs $HOME
 
-# Rollback si algo sale mal
-sync-arch rollback
+# === DEPLOYMENT SEGURO ===
+sync-arch deploy            # Desplegar symlinks con backup automático
+sync-arch rollback          # Restaurar desde backup más reciente
+sync-arch rollback nombre   # Restaurar desde backup específico  
+sync-arch list-backups      # Listar backups disponibles
 
-# Rollback a backup específico
-sync-arch rollback backup_20250811_143500
+# === MODOS DE SINCRONIZACIÓN ===
+sync-arch startup           # Modo startup (usado por systemd)
+sync-arch shutdown          # Modo shutdown (usado por systemd)
+sync-arch manual            # Modo manual (por defecto)
+
+# === OPCIONES GLOBALES ===
+sync-arch --dry-run          # Simular cambios (por defecto)
+sync-arch --no-dry-run       # Aplicar cambios reales
+sync-arch --force            # Forzar sincronización sin verificar cambios
+sync-arch --force-overwrite  # Sobrescribir archivos existentes automáticamente
+sync-arch --verbose          # Logging detallado
 ```
 
-## 📁 **Estructura del Proyecto**
+### 📁 **Estructura de Archivos**
 
 ```
 sync-arch/
-├── 🌍 CLI Global
-│   ├── sync-arch              # Comando global principal
-│   ├── install-cli.sh         # Instalador automático
-│   └── uninstall-cli.sh       # Desinstalador limpio
-│
-├── ⚙️ Scripts Core
-│   ├── scripts/
-│   │   ├── core/              # 🔧 Módulos principales
-│   │   │   ├── config.py      # Gestión configuración
-│   │   │   ├── ignore.py      # Lógica ignore y precedencia
-│   │   │   ├── git_ops.py     # Operaciones Git
-│   │   │   ├── stow_ops.py    # Operaciones GNU Stow
-│   │   │   ├── conflicts.py   # Resolución conflictos
-│   │   │   ├── path_utils.py  # Utilidades rutas (elimina duplicidad)
-│   │   │   └── utils.py       # Utilidades comunes
-│   │   │
-│   │   ├── commands/          # 🎯 Comandos usuario
-│   │   │   ├── deploy.py      # Deploy con backup
-│   │   │   ├── validate.py    # Validación consistencia
-│   │   │   ├── cleanup.py     # Limpieza archivos ignorados
-│   │   │   ├── discover.py    # Descubrimiento interactivo
-│   │   │   ├── sync_modes.py  # Modos sincronización
-│   │   │   └── status.py      # Estado sistema
-│   │   │
-│   │   ├── sync.py            # 🎼 Orquestador principal
-│   │   ├── sync.sh            # 📜 Wrapper Bash
-│   │   └── install.py         # 🛠️ Instalador dotfiles
-│
-├── 📋 Configuración
-│   └── config.json            # Configuración central
-│
-├── 📂 Dotfiles Organizados
-│   └── dotfiles/
-│       ├── common/home/       # 🏠 Archivos comunes ($HOME)
-│       ├── archlinux/home/    # 💻 Específicos hostname
-│       └── system_configs/    # ⚙️ Configuraciones sistema
-│
-└── 📚 Documentación
-    ├── README.md              # Este archivo
-    └── docs/                  # Documentación adicional
+├── config.json                 # Configuración central
+├── dotfiles/
+│   ├── common/                  # Archivos compartidos entre equipos
+│   │   └── home/               # Symlinks a $HOME
+│   └── archlinux/              # Archivos específicos del hostname
+│       └── home/               # Overrides específicos
+├── scripts/                    # Sistema modular
+│   ├── core/                   # Módulos principales
+│   │   ├── config.py           # Gestión de configuración
+│   │   ├── ignore.py           # Lógica de ignore y precedencia
+│   │   ├── git_ops.py          # Operaciones Git
+│   │   ├── stow_ops.py         # Operaciones GNU Stow
+│   │   ├── conflicts.py        # Resolución de conflictos
+│   │   ├── path_utils.py       # Utilidades de rutas centralizadas
+│   │   ├── context.py          # Context manager centralizado
+│   │   └── utils.py            # Utilidades comunes
+│   ├── commands/               # Comandos modulares
+│   │   ├── discover.py         # Descubrimiento interactivo
+│   │   ├── validate.py         # Validación de consistencia
+│   │   ├── cleanup.py          # Limpieza de ignorados
+│   │   ├── deploy.py           # Deploy seguro con backup
+│   │   ├── status.py           # Estado del repositorio
+│   │   └── sync_modes.py       # Modos de sincronización
+│   ├── sync.py                 # Dispatcher principal
+│   ├── sync.sh                 # Wrapper Bash
+│   └── install.py              # Instalador unificado
+├── systemd/                    # Servicios systemd
+└── sync-arch                   # CLI global
 ```
+
+---
 
 ## ⚙️ **Configuración Avanzada**
 
-### **config.json - Archivo Central**
+### 📝 **config.json**
 
 ```json
 {
-  "common": [""],              // HOME approach: todo $HOME en común
-  "archlinux": [               // Específico para este hostname
+  "common": [
+    ""                           // Enfoque HOME: gestiona todo $HOME
+  ],
+  "archlinux": [                 // Configuración específica del hostname
     ".config/hypr/monitors.conf",
     ".config/hypr/nvidia.conf",
-    ".local/bin/scripts_especificos.py"
+    ".local/bin/script_especifico.py"
   ],
-  "system_configs": [          // Configuraciones sistema
+  "system_configs": [            // Archivos del sistema (/etc)
     "/etc/sddm.conf.d/theme.conf"
   ],
-  "ignore": [                  // Patrones a ignorar
+  "ignore": [                    // Patrones a ignorar
     "**/*.log",
     "**/.cache/**",
     ".config/Code/**",
-    ".config/Cursor/**"
+    ".config/session/**"
   ],
-  "conflict_resolution": {     // Configuración conflictos
+  "conflict_resolution": {       // Configuración de conflictos
     "backup_existing": true,
     "backup_location": "~/.sync-arch-backup/",
-    "interactive_confirm": true
+    "interactive_confirm": true,
+    "preserve_permissions": true
   }
 }
 ```
 
-### **Precedencia de Configuración**
-```
-hostname > ignore > common
-```
+### 🔄 **Lógica de Precedencia**
 
-## 🔧 **Funcionalidades Técnicas**
+1. **hostname específico** > `ignore` > `common`
+2. **Archivos en hostname** sobrescriben carpetas en common
+3. **Unfold automático** para overrides parciales
+4. **Migración automática** cuando cambian las secciones
 
-### **🛡️ Sistema de Backup por Hostname**
+---
+
+## 🔧 **Servicios Systemd**
+
+### 📋 **Servicios Instalados**
 
 ```bash
-# Estructura de backups
-~/.sync-arch-backups/
-└── archlinux/                    # Por hostname
-    └── backup_20250811_143500/   # Timestamped
-        ├── backup_metadata.txt   # Metadatos del backup
-        └── [archivos_respaldados] # Archivos originales
+# Ver estado de servicios
+systemctl --user status sync-arch-startup.service
+systemctl --user status sync-arch-shutdown.service
+
+# Logs de servicios
+journalctl --user -u sync-arch-startup.service
+journalctl --user -u sync-arch-shutdown.service
+
+# Deshabilitar servicios (si es necesario)
+systemctl --user disable sync-arch-startup.service
+systemctl --user disable sync-arch-shutdown.service
 ```
 
-**Características:**
-- ✅ Un backup único por hostname (no múltiples versiones)
-- ✅ Metadatos completos con información del backup
-- ✅ Rollback automático o específico
-- ✅ Preservación de permisos y estructura
+### ⏰ **Funcionamiento**
 
-### **🔄 Unfolding Automático**
+- **sync-arch-startup.service**: Se ejecuta al iniciar sesión (`default.target`)
+- **sync-arch-shutdown.service**: Se ejecuta antes de apagado/suspensión (`halt.target`, `reboot.target`, etc.)
+- **Timeout de 60 segundos** para evitar bloqueos del sistema
+- **Modo no dry-run** para aplicar cambios automáticamente
 
-Cuando tienes:
-- `common/` maneja `.config/hypr/`
-- `archlinux/` especifica `.config/hypr/monitors.conf`
+---
 
-El sistema automáticamente:
-1. **Descompone** el directorio común en archivos individuales
-2. **Migra** `monitors.conf` al directorio específico del hostname
-3. **Mantiene** el resto de archivos en común
-4. **Actualiza** symlinks automáticamente
+## 🛠️ **Workflows Típicos**
 
-### **🔍 Comandos de Diagnóstico**
+### 🆕 **Configurar Nueva Máquina**
 
-#### **validate - Detección de Inconsistencias**
 ```bash
+# 1. Clonar repositorio existente
+git clone <tu-repo-privado> sync-arch
+cd sync-arch
+
+# 2. Ejecutar instalador unificado
+./install.sh
+
+# 3. El sistema detectará automáticamente el hostname y creará la configuración
+```
+
+### 📁 **Agregar Nuevos Dotfiles**
+
+```bash
+# 1. Descubrir archivos no gestionados
+sync-arch discover
+
+# 2. Elegir interactivamente: common, hostname, o ignore
+# 3. Validar configuración
 sync-arch validate
+
+# 4. Aplicar cambios
+sync-arch --no-dry-run
 ```
 
-Detecta 4 tipos de problemas:
-- 📁 **MISSING IN REPO**: En config pero no versionado
-- 🔗 **MISSING SYMLINKS**: Versionado pero no desplegado  
-- ❓ **MISSING EVERYWHERE**: En config pero no existe
-- ⚠️ **ORPHANED CONFIG**: En config pero coincide con ignore
+### 🔄 **Sincronización Entre Equipos**
 
-#### **cleanup - Limpieza Automática**
 ```bash
-sync-arch cleanup --no-dry-run
+# Equipo A: hacer cambios y sincronizar
+sync-arch --no-dry-run
+
+# Equipo B: recibir cambios
+sync-arch --no-dry-run
 ```
 
-Elimina automáticamente del repositorio:
-- Archivos que coinciden con patrones `ignore`
-- Archivos no explícitamente incluidos para el hostname
-- **Sin tocar** archivos en `$HOME`
+### 🛡️ **Backup y Recuperación**
 
-### **🎯 Detección Automática del Proyecto**
-
-El CLI busca sync-arch en:
-1. `$SYNC_ARCH_HOME` (variable personalizada)
-2. `$HOME/proyectos/sync-arch`
-3. `$HOME/projects/sync-arch`
-4. `$HOME/sync-arch`
-5. `$HOME/.sync-arch`
-6. Repositorios git con nombre 'sync-arch'
-
-## 🛠️ **Desarrollo y Extensión**
-
-### **🏗️ Arquitectura Modular**
-
-La refactorización elimina duplicidad de código:
-
-**Antes:**
-- ❌ `deploy.py` y `validate.py` tenían `get_repo_path` duplicado
-- ❌ Lógica de rutas gestionadas repetida en múltiples archivos  
-- ❌ Funciones de normalización de paths duplicadas
-
-**Ahora:**
-- ✅ `PathUtils` centraliza toda la lógica de rutas
-- ✅ Reutilización completa entre comandos
-- ✅ Fácil mantenimiento y extensión
-
-### **📦 Agregar Nuevos Comandos**
-
-```python
-# 1. Crear scripts/commands/mi_comando.py
-from core.path_utils import PathUtils
-
-class MiComando:
-    def __init__(self, config_manager, ignore_manager, dotfiles_dir, home_dir):
-        self.path_utils = PathUtils(config_manager, dotfiles_dir, home_dir)
-    
-    def run_mi_comando(self):
-        # Usar funciones centralizadas
-        managed_paths = self.path_utils.get_managed_paths()
-        # ... tu lógica
-
-# 2. Agregar a scripts/commands/__init__.py
-from .mi_comando import MiComando
-
-# 3. Integrar en sync.py y sync.sh
-```
-
-## 🚨 **Troubleshooting**
-
-### **Problemas Comunes**
-
-#### **❌ Error: "No se pudo encontrar la instalación de sync-arch"**
 ```bash
-# Solución 1: Definir variable de entorno
-export SYNC_ARCH_HOME=/ruta/completa/al/proyecto
-sync-arch status
-
-# Solución 2: Ejecutar desde directorio del proyecto
-cd ~/proyectos/sync-arch
-./scripts/sync.sh status
-
-# Solución 3: Debug mode
-SYNC_ARCH_DEBUG=1 sync-arch status
-```
-
-#### **❌ Error: "Cambios locales sin commit"**
-```bash
-# Ver qué cambió
-sync-arch status
-
-# Commit manual
-cd ~/proyectos/sync-arch
-git add -A && git commit -m "Cambios manuales"
-
-# O forzar sync
-sync-arch --force --no-dry-run
-```
-
-#### **⚠️ Symlinks incorretos después de deploy**
-```bash
-# Rollback inmediato
-sync-arch rollback
-
 # Ver backups disponibles
 sync-arch list-backups
 
-# Rollback a backup específico
-sync-arch rollback backup_20250811_143500
+# Restaurar desde backup más reciente
+sync-arch rollback
+
+# Restaurar desde backup específico
+sync-arch rollback 2025-08-11_15-30-45
 ```
 
-### **🔍 Debug Mode**
+---
+
+## 🔍 **Comandos de Diagnóstico**
+
+### 📊 **Estado del Sistema**
 
 ```bash
-# Activar debug completo
-SYNC_ARCH_DEBUG=1 sync-arch deploy
+# Estado general
+sync-arch status
 
-# Ver logs detallados
+# Validación completa
+sync-arch validate
+
+# Logs detallados
+sync-arch --verbose manual
+
+# Ver configuración actual
+cat config.json | jq .
+```
+
+### 🐛 **Troubleshooting**
+
+```bash
+# Ver logs de sistema
 tail -f ~/.local/state/sync-arch/sync.log
+
+# Verificar servicios systemd
+systemctl --user list-units | grep sync-arch
+
+# Test manual de comandos
+sync-arch --dry-run --verbose manual
+
+# Verificar estado de Git
+cd /ruta/a/sync-arch && git status
 ```
 
-## 📚 **Casos de Uso Avanzados**
+---
 
-### **🖥️ Múltiples Equipos**
+## 🏗️ **Arquitectura del Sistema**
 
-**Equipo Desktop (archlinux):**
-```json
-{
-  "archlinux": [
-    ".config/hypr/monitors.conf",     // Monitor 4K
-    ".config/hypr/nvidia.conf",       // GPU NVIDIA
-    ".local/bin/desktop_scripts/"     // Scripts específicos
-  ]
-}
+### 📦 **Módulos Core**
+
+- **`config.py`**: Gestión centralizada de configuración
+- **`ignore.py`**: Lógica de patrones ignore y precedencia  
+- **`git_ops.py`**: Operaciones Git (push, pull, stash, etc.)
+- **`stow_ops.py`**: Operaciones GNU Stow para symlinks
+- **`conflicts.py`**: Resolución de conflictos y unfold automático
+- **`path_utils.py`**: Utilidades de rutas centralizadas
+- **`context.py`**: Context manager para gestión de dependencias
+- **`utils.py`**: Utilidades comunes (logging, lockfile, etc.)
+
+### 🎯 **Comandos Modulares**
+
+- **`sync_modes.py`**: Lógica para startup/shutdown/manual
+- **`discover.py`**: Descubrimiento interactivo de archivos
+- **`validate.py`**: Validación de consistencia
+- **`cleanup.py`**: Limpieza de archivos ignorados
+- **`deploy.py`**: Deploy seguro con backup
+- **`status.py`**: Estado del repositorio
+
+### 🔄 **Flujo de Ejecución**
+
+1. **sync.py**: Dispatcher principal, parsea argumentos
+2. **SyncArchContext**: Inicializa todos los managers necesarios
+3. **Comando específico**: Ejecuta la lógica correspondiente
+4. **Managers core**: Manejan Git, Stow, configuración, etc.
+5. **Logging centralizado**: Registra todas las operaciones
+
+---
+
+## 🚀 **Características Avanzadas**
+
+### 🔧 **Context Manager Centralizado**
+
+```python
+# Uso del contexto centralizado en módulos
+from core import SyncArchContext
+
+context = SyncArchContext(dotfiles_dir, home_dir, project_root, hostname, dry_run)
+
+# Acceso a todos los managers
+config = context.get_config()
+git_ops = context.get_git_ops()  
+stow_ops = context.get_stow_ops()
 ```
 
-**Equipo Laptop (laptop):**
-```json
-{
-  "laptop": [
-    ".config/hypr/power.conf",        // Gestión energía
-    ".config/waybar/battery.jsonc",   // Módulo batería
-    ".local/bin/laptop_scripts/"      // Scripts específicos
-  ]
-}
-```
+### 🎯 **Eliminación de Duplicidad**
 
-### **⚙️ Configuraciones del Sistema**
+- **Funciones centralizadas** en `path_utils.py`
+- **Context manager** para dependencias comunes
+- **Reutilización de código** entre comandos
+- **Imports optimizados** sin redundancia
 
-```json
-{
-  "system_configs": [
-    "/etc/sddm.conf.d/theme.conf",
-    "/usr/share/sddm/themes/custom/",
-    "/etc/systemd/system/custom.service"
-  ]
-}
-```
+### 🔄 **Gestión de Estado**
 
-**Notas importantes:**
-- Requiere permisos de administrador
-- Solo para archivos críticos del sistema
-- Usa rutas absolutas
+- **Lockfile** para prevenir ejecuciones simultáneas
+- **Stash automático** de cambios locales durante pull
+- **Detección de conflictos** antes de aplicar cambios
+- **Rollback automático** en caso de errores
 
-### **🎨 Themes y Layouts Compartidos**
+---
 
-```json
-{
-  "common": [""],                     // Todo en común
-  "ignore": [
-    ".config/waybar/layouts/backup/**",  // Backups personales
-    ".config/hypr/themes/testing/**"     // Themes experimentales
-  ],
-  "archlinux": [
-    ".config/waybar/layouts/4k.jsonc",   // Layout específico 4K
-    ".config/hypr/themes/desktop.conf"   // Theme específico desktop
-  ]
-}
-```
+## ⚠️ **Consideraciones Importantes**
+
+### 🛡️ **Seguridad**
+
+- **Dry-run por defecto** para prevenir cambios accidentales
+- **Backup automático** antes de crear symlinks
+- **Validación de rutas** para prevenir symlinks maliciosos
+- **Lockfile** para prevenir corrupción de datos
+
+### 📝 **Mejores Prácticas**
+
+- **Usar ramas específicas** para diferentes configuraciones si es necesario
+- **Revisar cambios** con `--dry-run` antes de aplicar
+- **Hacer backups regulares** del repositorio
+- **Documentar cambios** en commits descriptivos
+
+### 🔧 **Limitaciones**
+
+- **Requiere GNU Stow** para funcionar correctamente
+- **Solo funciona en sistemas Unix/Linux** (debido a symlinks)
+- **Requiere Python 3.8+** para características modernas
+- **Servicios systemd** solo disponibles en sistemas compatibles
+
+---
+
+## 📚 **Recursos Adicionales**
+
+### 📖 **Documentación**
+
+- **README.md**: Esta documentación completa
+- **config.json**: Configuración con comentarios inline
+- **Scripts comentados**: Código autodocumentado
+
+### 🔗 **Enlaces Útiles**
+
+- [GNU Stow Manual](https://www.gnu.org/software/stow/manual/)
+- [Systemd User Services](https://wiki.archlinux.org/title/Systemd/User)
+- [Git Hooks Documentation](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks)
+
+---
 
 ## 🤝 **Contribución**
 
-1. **Fork** el repositorio
-2. **Crea** una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
-3. **Commit** tus cambios (`git commit -am 'Agregar nueva funcionalidad'`)
-4. **Push** a la rama (`git push origin feature/nueva-funcionalidad`)
-5. **Abre** un Pull Request
+Para contribuir al proyecto:
 
-### **🏗️ Estructura para Nuevas Features**
-
-- **Core modules** (`scripts/core/`): Funcionalidad base reutilizable
-- **Commands** (`scripts/commands/`): Comandos específicos de usuario
-- **Tests**: Agregar tests para nueva funcionalidad
-- **Docs**: Actualizar README.md y documentación
-
-## 📄 **Licencia**
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para detalles.
+1. Fork el repositorio
+2. Crea una rama para tu feature: `git checkout -b mi-feature`
+3. Documenta tus cambios
+4. Asegúrate de que pasan todas las validaciones: `sync-arch validate`
+5. Envía un pull request
 
 ---
 
-## ⭐ **¿Te gusta Sync-Arch?**
+## 📜 **Licencia**
 
-Si te resulta útil este sistema:
-- 🌟 **Dale una estrella** al repositorio
-- 🐛 **Reporta bugs** que encuentres
-- 💡 **Sugiere mejoras** vía Issues
-- 🤝 **Contribuye** con nuevas features
+Este proyecto está bajo licencia MIT. Ver el archivo LICENSE para más detalles.
 
 ---
 
-**Hecho con ❤️ para la comunidad Arch Linux**
+**¡Disfruta de tus dotfiles perfectamente sincronizados! 🎉**

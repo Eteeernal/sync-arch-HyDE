@@ -110,28 +110,14 @@ class ValidateCommand:
         """Obtener todas las rutas gestionadas desde config.json"""
         managed_paths = {}
         
-        # Rutas comunes
-        common_paths = self.config.get_common_paths()
-        for path in common_paths:
-            if path == "":  # HOME approach
-                continue  # No validamos el HOME completo
-            normalized = self.config.normalize_path(path)
-            managed_paths[f'common:{path}'] = {
-                'path': path,
-                'normalized': normalized,
-                'source': 'common'
-            }
+        # Usar la función centralizada de path_utils
+        paths_list = self.path_utils.get_managed_paths(include_system_configs=False)
         
-        # Rutas específicas del hostname
-        hostname_paths = self.config.get_hostname_paths(self.hostname)
-        for path in hostname_paths:
-            normalized = self.config.normalize_path(path)
-            managed_paths[f'{self.hostname}:{path}'] = {
-                'path': path,
-                'normalized': normalized,
-                'source': self.hostname
-            }
-        
+        # Convertir a formato de dict con keys únicos para compatibilidad
+        for path_info in paths_list:
+            key = f"{path_info['source']}:{path_info['path']}"
+            managed_paths[key] = path_info
+            
         return managed_paths
     
     def get_repo_path(self, source: str, normalized_path: str) -> Path:
