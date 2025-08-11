@@ -1,0 +1,18 @@
+/* User custom styles */
+
+/* Estilos para el módulo markdown-reader */
+.custom-markdown-reader {
+    background: rgba(138, 173, 244, 0.1);
+    border: 1px solid rgba(138, 173, 244, 0.3);
+    border-radius: 8px;
+    padding: 4px 12px;
+    margin: 2px;
+    color: #8AADF4;
+    font-weight: 500;
+}
+
+.custom-markdown-reader:hover {
+    background: rgba(138, 173, 244, 0.2);
+    border-color: rgba(138, 173, 244, 0.5);
+    color: #ffffff;
+}

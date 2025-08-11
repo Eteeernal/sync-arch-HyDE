@@ -1,43 +1,53 @@
-# Configuración Común
+# Configuración Común (Enfoque HOME)
 
-Esta carpeta contiene dotfiles que se aplican a **todos los equipos**.
+Esta carpeta contiene una **réplica completa** de la estructura de `$HOME` que se aplica a todos los equipos.
 
-## Estructura recomendada
+## Estructura
 
 ```
 common/
-├── .config/
-│   ├── hypr/              # Hyprland configs base
-│   ├── waybar/            # Waybar themes y layouts
-│   ├── kitty/             # Terminal configuration
-│   ├── rofi/              # Application launcher
-│   └── dunst/             # Notification daemon
-├── .local/
-│   └── bin/               # Scripts compartidos
-├── .zshrc                 # Shell configuration
-└── .gitconfig             # Git global config
+└── home/                        # Réplica de $HOME
+    ├── .config/                 # Todas las configuraciones base
+    │   ├── hypr/                # Hyprland (excepto archivos específicos por equipo)
+    │   ├── waybar/              # Waybar completo (themes, layouts, modules)
+    │   ├── hyde/                # HyDE themes y configuración
+    │   ├── kitty/               # Terminal configuration
+    │   ├── rofi/                # Application launcher
+    │   ├── dunst/               # Notification daemon
+    │   ├── fastfetch/           # System info tool
+    │   ├── starship/            # Shell prompt
+    │   └── zsh/                 # Zsh configuration
+    ├── .local/
+    │   └── bin/                 # Scripts compartidos entre equipos
+    ├── .zshrc                   # Shell configuration
+    └── .bashrc                  # Bash configuration
 ```
+
+## Enfoque "HOME Completo"
+
+- ✅ **`home/` se aplica completo** a todos los equipos por defecto
+- ✅ **Automático**: Cualquier dotfile nuevo se sincroniza sin configuración
+- ✅ **Override inteligente**: Los archivos específicos por hostname reemplazan automáticamente los de aquí
 
 ## Qué incluir aquí
 
-- ✅ Configuraciones que funcionan en todos los equipos
-- ✅ Temas y layouts visuales consistentes
-- ✅ Scripts y herramientas generales
-- ✅ Configuraciones de shell y terminal
-- ✅ Keybindings y atajos comunes
+- ✅ **Toda configuración que funciona universalmente**
+- ✅ **Temas y layouts consistentes entre equipos**
+- ✅ **Scripts y herramientas generales**
+- ✅ **Configuraciones base de aplicaciones**
 
-## Qué NO incluir aquí
+## Qué se override automáticamente
 
-- ❌ Configuraciones específicas de hardware (monitores, GPU)
-- ❌ Scripts con rutas absolutas específicas
-- ❌ Configuraciones que dependen del hostname
-- ❌ Archivos con secrets o información personal
+Los archivos específicos por hostname (en `../archlinux/home/`) **reemplazan automáticamente** los de aquí:
 
-## Migración automática
+- `monitors.conf` → hardware específico
+- `nvidia.conf` → GPU específica  
+- `userprefs.conf` → preferencias del equipo
+- Scripts personalizados del equipo
 
-Si agregas un archivo específico para un equipo en `config.json`, Sync-Arch automáticamente:
+## Ventajas de este enfoque
 
-1. Detecta el conflicto
-2. Migra el archivo a la carpeta del equipo
-3. Reorganiza los symlinks
-4. Mantiene la configuración común para el resto de archivos
+1. **Escalabilidad automática**: Nuevos dotfiles se sincronizan sin configurar
+2. **Menos mantenimiento**: Solo especificas diferencias, no duplicas todo
+3. **Consistent UX**: Misma experiencia base en todos los equipos
+4. **Override selectivo**: Solo cambias lo que necesitas por equipo

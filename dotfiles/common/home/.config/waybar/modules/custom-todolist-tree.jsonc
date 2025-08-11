@@ -1,0 +1,11 @@
+{
+  "custom/todolist-tree": {
+    "format": "🌳 {}",
+    "exec": "/home/sergiof/.local/bin/tree.py",
+    "interval": 5,
+    "return-type": "json",
+    "tooltip": true,
+    "on-click": "/home/sergiof/.local/bin/choose_and_check_tree.py",
+    "on-click-right": "/home/sergiof/.local/bin/choose_and_check_tree.py"
+  }
+}

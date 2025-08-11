@@ -1,0 +1,11 @@
+{
+  "custom/todolist": {
+    "format": "📝 {}",
+    "exec": "/home/sergiof/.local/bin/current.py",
+    "interval": 5,
+    "return-type": "json",
+    "tooltip": true,
+    "on-click": "/home/sergiof/.local/bin/choose_and_check.py",
+    "on-click-right": "/home/sergiof/.local/bin/choose_and_check.py"
+  }
+}

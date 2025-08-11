@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# Archivo Markdown a leer (puedes cambiarlo por la ruta que prefieras)
+MARKDOWN_FILE="$HOME/.config/waybar/notes.md"
+
+# Función para crear el archivo de ejemplo si no existe
+create_example_file() {
+    if [[ ! -f "$MARKDOWN_FILE" ]]; then
+        cat > "$MARKDOWN_FILE" << 'EOF'
+# Mis Notas de Waybar
+
+## Recordatorios
+- Revisar emails 📧
+- Reunión a las 15:00 🕐
+- Comprar leche ��
+
+## Estado del Sistema
+Sistema funcionando correctamente ✅
+
+## Notas Rápidas
+Este es un módulo personalizado que lee texto desde Markdown.
+Puedes editarlo y el contenido se actualizará automáticamente.
+EOF
+        echo "Archivo de ejemplo creado en: $MARKDOWN_FILE"
+    fi
+}
+
+# Función para extraer texto del markdown
+get_text_from_markdown() {
+    if [[ ! -f "$MARKDOWN_FILE" ]]; then
+        create_example_file
+    fi
+    
+    # Obtener la primera línea que no sea un header (sin #)
+    local text=$(grep -v "^#" "$MARKDOWN_FILE" | grep -v "^$" | head -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    
+    # Si no hay texto, usar el primer header
+    if [[ -z "$text" ]]; then
+        text=$(grep "^#" "$MARKDOWN_FILE" | head -1 | sed 's/^#*[[:space:]]*//')
+    fi
+    
+    # Si aún no hay texto, usar mensaje por defecto
+    if [[ -z "$text" ]]; then
+        text="Sin contenido"
+    fi
+    
+    echo "$text"
+}
+
+# Función para generar JSON para waybar
+generate_json() {
+    # Obtener texto del markdown
+    local text=$(get_text_from_markdown)
+    local tooltip_content=$(head -5 "$MARKDOWN_FILE" 2>/dev/null | tr '\n' ' ' | sed 's/"/\\"/g')
+    
+    # Limpiar texto de caracteres problemáticos
+    text=$(echo "$text" | sed 's/"/\\"/g' | tr -d '\n\r')
+    tooltip_content=$(echo "$tooltip_content" | sed 's/"/\\"/g')
+    
+    printf '{"text":"📝 %s","tooltip":"%s","class":"markdown-reader"}\n' "$text" "$tooltip_content"
+}
+
+# Función para abrir el archivo en el editor
+edit_file() {
+    # Detectar el editor disponible
+    if command -v code >/dev/null 2>&1; then
+        code "$MARKDOWN_FILE"
+    elif command -v nano >/dev/null 2>&1; then
+        kitty nano "$MARKDOWN_FILE" &
+    elif command -v vim >/dev/null 2>&1; then
+        kitty vim "$MARKDOWN_FILE" &
+    else
+        # Fallback a xdg-open
+        xdg-open "$MARKDOWN_FILE"
+    fi
+}
+
+# Función para forzar recarga
+reload_waybar() {
+    pkill -SIGUSR2 waybar
+}
+
+# Procesar argumentos
+case "$1" in
+    --edit)
+        edit_file
+        ;;
+    --reload)
+        reload_waybar
+        ;;
+    --help)
+        echo "Uso: $0 [--edit|--reload|--help]"
+        echo "  --edit    Abrir el archivo markdown en el editor"
+        echo "  --reload  Forzar recarga de waybar"
+        echo "  --help    Mostrar esta ayuda"
+        ;;
+    *)
+        generate_json
+        ;;
+esac

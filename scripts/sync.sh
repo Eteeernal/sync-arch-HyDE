@@ -53,6 +53,7 @@ OPTIONS:
     --dry-run           Ejecutar en modo simulación (POR DEFECTO)
     --no-dry-run        Ejecutar cambios reales
     --force             Forzar sincronización sin verificar cambios
+    --force-overwrite   Sobrescribir archivos existentes automáticamente
     --verbose, -v       Activar logging detallado
     --quiet, -q         Modo silencioso (solo errores)
 
@@ -60,6 +61,7 @@ EXAMPLES:
     $0                          # Sincronización manual en dry-run
     $0 --no-dry-run            # Sincronización manual real
     $0 startup --no-dry-run     # Sincronización de startup real
+    $0 --force-overwrite        # Sobrescribir archivos existentes (equipo nuevo)
     $0 status                   # Ver estado del repositorio
     $0 manual --force -v        # Sincronización forzada y verbosa
 
@@ -178,7 +180,7 @@ run_sync() {
     # Procesar argumentos
     for arg in "${args[@]}"; do
         case "$arg" in
-            --dry-run|--force|--verbose|-v|--no-dry-run)
+            --dry-run|--force|--verbose|-v|--no-dry-run|--force-overwrite)
                 python_args+=("$arg")
                 ;;
             --quiet|-q)

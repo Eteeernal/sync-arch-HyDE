@@ -81,9 +81,10 @@ class SyncLock:
 class SyncArch:
     """Clase principal para la sincronización de dotfiles"""
     
-    def __init__(self, dry_run: bool = False, verbose: bool = False):
+    def __init__(self, dry_run: bool = False, verbose: bool = False, force_overwrite: bool = False):
         self.dry_run = dry_run
         self.verbose = verbose
+        self.force_overwrite = force_overwrite
         self.config = self.load_config()
         self.hostname = HOSTNAME
         
@@ -92,6 +93,8 @@ class SyncArch:
         
         logger.info(f"Iniciando Sync-Arch para hostname: {self.hostname}")
         logger.info(f"Modo dry-run: {'ACTIVADO' if dry_run else 'DESACTIVADO'}")
+        if force_overwrite:
+            logger.info("Modo force-overwrite: ACTIVADO")
 
     def load_config(self) -> Dict:
         """Cargar configuración desde config.json"""
@@ -187,12 +190,136 @@ class SyncArch:
                     shutil.copy2(source_path, dest_path)
                     logger.info(f"Archivo migrado: {source_path} → {dest_path}")
                 return True
+            elif dest_path.exists():
+                # Caso especial: archivo ya existe en destino (enfoque HOME)
+                logger.debug(f"Archivo ya existe en destino: {dest_path}")
+                return True
             else:
-                logger.warning(f"Archivo fuente no existe: {source_path}")
+                logger.warning(f"Archivo no existe ni en fuente ni en destino: {source_path} → {dest_path}")
                 return False
         except Exception as e:
             logger.error(f"Error migrando archivo {source_path} → {dest_path}: {e}")
             return False
+
+    def detect_existing_file_conflicts(self) -> List[Path]:
+        """Detectar archivos existentes que conflictúan con symlinks de stow"""
+        conflicts = []
+        
+        # Obtener rutas que serían gestionadas por stow
+        managed_paths = []
+        
+        # Rutas de common
+        for path in self.config.get('common', []):
+            if path.endswith('/'):
+                # Es carpeta, explorar contenido
+                common_dir = DOTFILES_DIR / "common" / path.lstrip('./')
+                if common_dir.exists():
+                    for root, dirs, files in os.walk(common_dir):
+                        for file in files:
+                            file_path = Path(root) / file
+                            relative_path = file_path.relative_to(DOTFILES_DIR / "common")
+                            target_path = HOME / relative_path
+                            managed_paths.append(target_path)
+            else:
+                # Es archivo específico
+                target_path = HOME / path.lstrip('./')
+                managed_paths.append(target_path)
+        
+        # Rutas específicas del hostname
+        if self.hostname in self.config:
+            for path in self.config[self.hostname]:
+                target_path = HOME / path.lstrip('./')
+                managed_paths.append(target_path)
+        
+        # Verificar conflictos
+        for target_path in managed_paths:
+            if target_path.exists() and not target_path.is_symlink():
+                conflicts.append(target_path)
+                logger.debug(f"Conflicto detectado: archivo existente {target_path}")
+        
+        return conflicts
+
+    def backup_existing_file(self, file_path: Path, backup_dir: Path) -> bool:
+        """Hacer backup de un archivo existente"""
+        try:
+            # Mantener estructura de directorios en backup
+            relative_path = file_path.relative_to(HOME)
+            backup_file = backup_dir / relative_path
+            backup_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            if self.dry_run:
+                logger.info(f"[DRY-RUN] Haría backup: {file_path} → {backup_file}")
+            else:
+                shutil.copy2(file_path, backup_file)
+                logger.info(f"Backup creado: {file_path} → {backup_file}")
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error haciendo backup de {file_path}: {e}")
+            return False
+
+    def handle_existing_files_conflict(self) -> bool:
+        """Manejar archivos existentes que conflictúan con symlinks"""
+        conflicts = self.detect_existing_file_conflicts()
+        
+        if not conflicts:
+            logger.debug("No se detectaron conflictos con archivos existentes")
+            return True
+        
+        logger.warning(f"Detectados {len(conflicts)} archivos existentes que conflictúan con symlinks")
+        
+        # Configuración de resolución de conflictos
+        conflict_config = self.config.get('conflict_resolution', {})
+        interactive_confirm = conflict_config.get('interactive_confirm', True)
+        backup_existing = conflict_config.get('backup_existing', True)
+        
+        # Confirmar acción si es interactivo y no está en force_overwrite
+        if interactive_confirm and not self.force_overwrite and not self.dry_run:
+            print(f"\n⚠️  Se encontraron {len(conflicts)} archivos existentes que serán reemplazados por symlinks:")
+            for conflict in conflicts[:5]:  # Mostrar primeros 5
+                print(f"   • {conflict}")
+            if len(conflicts) > 5:
+                print(f"   ... y {len(conflicts) - 5} archivos más")
+            
+            response = input("\n¿Crear backup y reemplazar con symlinks? (y/N): ")
+            if response.lower() not in ['y', 'yes', 'sí', 's']:
+                logger.info("Operación cancelada por el usuario")
+                return False
+        elif not self.force_overwrite and not self.dry_run:
+            logger.error("Archivos existentes detectados. Use --force-overwrite para proceder automáticamente")
+            return False
+        
+        # Crear backup si está habilitado
+        if backup_existing:
+            backup_location = conflict_config.get('backup_location', '~/.sync-arch-backup/')
+            backup_dir = Path(backup_location).expanduser() / datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            if self.dry_run:
+                logger.info(f"[DRY-RUN] Crearía backup en: {backup_dir}")
+            else:
+                backup_dir.mkdir(parents=True, exist_ok=True)
+                logger.info(f"Creando backup en: {backup_dir}")
+            
+            # Hacer backup de archivos conflictivos
+            for file_path in conflicts:
+                if not self.backup_existing_file(file_path, backup_dir):
+                    logger.error(f"Error en backup de {file_path}")
+                    return False
+        
+        # Eliminar archivos conflictivos para permitir symlinks
+        if not self.dry_run:
+            for file_path in conflicts:
+                try:
+                    file_path.unlink()
+                    logger.debug(f"Archivo eliminado para symlink: {file_path}")
+                except Exception as e:
+                    logger.error(f"Error eliminando {file_path}: {e}")
+                    return False
+        else:
+            logger.info(f"[DRY-RUN] Eliminaría {len(conflicts)} archivos conflictivos")
+        
+        logger.info(f"Conflictos resueltos: {len(conflicts)} archivos preparados para symlinks")
+        return True
 
     def reorganize_conflicted_folders(self, conflicts: List[Tuple[str, str, str]]) -> bool:
         """Reorganizar carpetas con conflictos de override parcial"""
@@ -226,8 +353,8 @@ class SyncArch:
                 
                 if not self.backup_and_migrate_file(source_file, dest_file):
                     success = False
-                elif not self.dry_run:
-                    # Eliminar archivo de common después de migrar
+                elif not self.dry_run and source_file.exists():
+                    # Solo eliminar archivo de common si realmente se migró desde ahí
                     try:
                         source_file.unlink()
                         logger.debug(f"Archivo eliminado de common: {source_file}")
@@ -325,6 +452,10 @@ class SyncArch:
             if not self.reorganize_conflicted_folders(conflicts):
                 return False
         
+        # Manejar conflictos con archivos existentes
+        if not self.handle_existing_files_conflict():
+            return False
+        
         # Aplicar stow
         packages = ['common']
         if self.hostname in self.config:
@@ -396,6 +527,10 @@ class SyncArch:
             if not self.reorganize_conflicted_folders(conflicts):
                 return False
         
+        # Manejar conflictos con archivos existentes
+        if not self.handle_existing_files_conflict():
+            return False
+        
         # Aplicar stow
         packages = ['common']
         if self.hostname in self.config:
@@ -425,6 +560,8 @@ def main():
                         help='Forzar sincronización sin verificar cambios')
     parser.add_argument('--no-dry-run', action='store_true',
                         help='Desactivar modo dry-run y ejecutar cambios reales')
+    parser.add_argument('--force-overwrite', action='store_true',
+                        help='Sobrescribir archivos existentes automáticamente')
     parser.add_argument('--verbose', '-v', action='store_true',
                         help='Activar logging detallado')
     
@@ -438,7 +575,7 @@ def main():
     
     try:
         with SyncLock(LOCK_FILE):
-            sync = SyncArch(dry_run=dry_run, verbose=args.verbose)
+            sync = SyncArch(dry_run=dry_run, verbose=args.verbose, force_overwrite=args.force_overwrite)
             
             if args.mode == 'startup':
                 success = sync.startup_sync()

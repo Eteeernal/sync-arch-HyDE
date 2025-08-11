@@ -1,45 +1,77 @@
 # Configuración específica para archlinux
 
-Esta carpeta contiene dotfiles específicos para el equipo con hostname `archlinux`.
+Esta carpeta contiene **únicamente las diferencias** respecto a la configuración común.
 
-## ¿Qué va aquí?
+## Enfoque "Solo Diferencias"
 
-- **Configuraciones de hardware**: monitores, GPUs, periféricos específicos
-- **Scripts personalizados**: herramientas específicas de este equipo  
-- **Overrides**: archivos que reemplazan versiones de `common/`
-- **Configuraciones de red**: WiFi, VPN específicas del entorno
+En lugar de duplicar toda la configuración, aquí solo se especifican los archivos que **deben ser diferentes** para este equipo específico.
 
-## Ejemplo de estructura
+## Estructura actual
 
 ```
 archlinux/
-├── .config/
-│   ├── hypr/
-│   │   ├── monitors.conf      # Configuración específica de monitores
-│   │   └── nvidia.conf        # Configuración específica de GPU
-│   ├── waybar/
-│   │   └── config.jsonc       # Layout específico del equipo
-│   └── networkmanager/
-│       └── system-connections/ # Conexiones de red específicas
-├── .local/
-│   └── bin/
-│       └── equipo-tool        # Script específico del equipo
-└── .ssh/
-    └── config                 # Configuración SSH específica
+└── home/                              # Solo overrides de $HOME
+    ├── .config/
+    │   └── hypr/
+    │       ├── monitors.conf          # Configuración específica de monitores
+    │       ├── nvidia.conf            # Configuración específica de GPU NVIDIA  
+    │       └── userprefs.conf         # Preferencias específicas del equipo
+    └── .local/
+        └── bin/
+            ├── choose_and_check_tree.py  # Scripts específicos del equipo
+            ├── choose_and_check.py
+            ├── current.py
+            └── tree.py
 ```
 
-## Prioridad
+## ¿Cómo funciona el override?
 
-Los archivos en esta carpeta tienen **mayor prioridad** que los de `common/`.
+1. **Base común**: Se aplica todo `common/home/` como base
+2. **Override específico**: Los archivos de esta carpeta **reemplazan** los de common
+3. **Resultado**: Tienes la configuración común + las especificaciones de este equipo
 
-Si existe el mismo archivo en ambas carpetas:
-- Se usa la versión de `archlinux/` ✅
-- Se ignora la versión de `common/` ❌
+### Ejemplo práctico:
 
-## Agregar nuevos archivos
+**Antes del override:**
+- `~/.config/hypr/monitors.conf` → symlink a `common/home/.config/hypr/monitors.conf`
 
-1. Edita `config.json` en la raíz del proyecto
-2. Agrega la ruta en la sección `"archlinux"`
-3. Ejecuta `./scripts/sync.sh` para aplicar
+**Después del override:**
+- `~/.config/hypr/monitors.conf` → symlink a `archlinux/home/.config/hypr/monitors.conf` ✅
 
-El sistema automáticamente migrará el archivo si ya existe en `common/`.
+## ¿Qué incluir aquí?
+
+- ✅ **Hardware específico**: monitors.conf, nvidia.conf, audio configs
+- ✅ **Scripts únicos**: herramientas específicas de este equipo
+- ✅ **Configuraciones de red**: WiFi, VPN específicas del entorno
+- ✅ **Preferencias personales**: temas, layouts que solo quieres en este equipo
+
+## ¿Qué NO incluir?
+
+- ❌ **Configuraciones universales**: van en `common/`
+- ❌ **Duplicación innecesaria**: si algo funciona igual en todos lados, va en common
+- ❌ **Archivos temporales**: cache, logs, etc.
+
+## Agregar nuevos overrides
+
+Para agregar un nuevo archivo específico:
+
+1. **Copia el archivo**: De `common/home/ruta/archivo` a `archlinux/home/ruta/archivo`
+2. **Edita el específico**: Modifica el archivo en archlinux/ según necesites
+3. **Actualiza config.json**: Agrega la ruta en la sección `"archlinux"`
+4. **Ejecuta sync**: `./scripts/sync.sh --no-dry-run`
+
+El sistema automáticamente:
+- Detectará el conflicto
+- Hará "unfolding" de la carpeta común
+- Aplicará el override específico
+- Mantendrá el resto de archivos de la carpeta común
+
+## Filosofía
+
+**"Configuración común por defecto, diferencias solo cuando sea necesario"**
+
+Esto resulta en:
+- Menos duplicación de código
+- Maintenance más fácil
+- Experiencia consistente entre equipos  
+- Flexibilidad para casos específicos

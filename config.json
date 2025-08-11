@@ -1,45 +1,15 @@
 {
   "common": [
-    ".config/hypr/hyprland.conf",
-    ".config/hypr/keybindings.conf", 
-    ".config/hypr/workspaces.conf",
-    ".config/hypr/windowrules.conf",
-    ".config/hypr/animations.conf",
-    ".config/hypr/themes/",
-    ".config/hypr/animations/",
-    ".config/hypr/hyprlock/",
-    ".config/hypr/workflows/",
-    ".config/waybar/style.css",
-    ".config/waybar/theme.css", 
-    ".config/waybar/user-style.css",
-    ".config/waybar/config.jsonc",
-    ".config/waybar/layouts/",
-    ".config/waybar/modules/",
-    ".config/waybar/includes/",
-    ".config/waybar/scripts/",
-    ".config/hyde/config.toml",
-    ".config/hyde/themes/",
-    ".config/hyde/wallbash/",
-    ".config/kitty/",
-    ".config/rofi/",
-    ".config/dunst/",
-    ".config/fastfetch/",
-    ".config/starship/",
-    ".config/zsh/",
-    ".local/bin/hyde-shell",
-    ".local/bin/hydectl",
-    ".zshrc",
-    ".bashrc"
+    "home/"
   ],
   "archlinux": [
-    ".config/hypr/monitors.conf",
-    ".config/hypr/nvidia.conf",
-    ".config/hypr/userprefs.conf",
-    ".config/hypr/hyde.conf",
-    ".local/bin/choose_and_check_tree.py",
-    ".local/bin/choose_and_check.py", 
-    ".local/bin/current.py",
-    ".local/bin/tree.py"
+    "home/.config/hypr/monitors.conf",
+    "home/.config/hypr/nvidia.conf",
+    "home/.config/hypr/userprefs.conf",
+    "home/.local/bin/choose_and_check_tree.py",
+    "home/.local/bin/choose_and_check.py", 
+    "home/.local/bin/current.py",
+    "home/.local/bin/tree.py"
   ],
   "system_configs": [
     "/etc/sddm.conf.d/the_hyde_project.conf",
@@ -59,5 +29,11 @@
     ".config/hypr_backup_*/**",
     ".config/cfg_backups/**",
     ".config/dconf/**"
-  ]
+  ],
+  "conflict_resolution": {
+    "backup_existing": true,
+    "backup_location": "~/.sync-arch-backup/",
+    "interactive_confirm": true,
+    "preserve_permissions": true
+  }
 }
