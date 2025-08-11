@@ -46,6 +46,7 @@ COMMANDS:
     startup             Sincronización en inicio de sesión
     shutdown            Sincronización antes de apagado/suspensión
     manual              Sincronización manual (por defecto)
+    discover            Descubrir y gestionar archivos no sincronizados
     status              Mostrar estado del repositorio
     help                Mostrar esta ayuda
 
@@ -61,6 +62,7 @@ EXAMPLES:
     $0                          # Sincronización manual en dry-run
     $0 --no-dry-run            # Sincronización manual real
     $0 startup --no-dry-run     # Sincronización de startup real
+    $0 discover                 # Buscar archivos nuevos para gestionar
     $0 --force-overwrite        # Sobrescribir archivos existentes (equipo nuevo)
     $0 status                   # Ver estado del repositorio
     $0 manual --force -v        # Sincronización forzada y verbosa
@@ -251,7 +253,7 @@ main() {
         status)
             show_status
             ;;
-        startup|shutdown|manual)
+        startup|shutdown|manual|discover)
             run_sync "$command" "${args[@]}"
             ;;
         *)

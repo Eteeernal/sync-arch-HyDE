@@ -111,22 +111,26 @@ class SyncArch:
             logger.error(f"Error al parsear configuración JSON: {e}")
             raise
 
+    def normalize_path(self, path: str) -> str:
+        """Normalizar ruta removiendo prefijos inconsistentes"""
+        # Remover prefijo home/ si existe (para compatibilidad)
+        normalized = path.replace('home/', '')
+        # Asegurar que empiece con . para rutas relativas al HOME
+        if normalized and not normalized.startswith('.') and not normalized.startswith('/'):
+            normalized = '.' + normalized if normalized.startswith('/') else normalized
+        return normalized
+
     def should_ignore_path(self, path: str) -> bool:
         """Verificar si una ruta debe ser ignorada según patrones en config.json"""
         ignore_patterns = self.config.get('ignore', [])
         
-        # Normalizar ruta removiendo prefijo home/ si existe
-        normalized_path = path.replace('home/', '')
+        # Normalizar ruta
+        normalized_path = self.normalize_path(path)
         
         for pattern in ignore_patterns:
             # Usar fnmatch para patrones con wildcards
             if fnmatch.fnmatch(normalized_path, pattern):
                 logger.debug(f"Ruta {normalized_path} coincide con patrón ignore: {pattern}")
-                return True
-                
-            # También verificar ruta completa con home/
-            if fnmatch.fnmatch(path, pattern):
-                logger.debug(f"Ruta {path} coincide con patrón ignore: {pattern}")
                 return True
                 
         return False
@@ -138,21 +142,21 @@ class SyncArch:
             
         hostname_files = self.config[self.hostname]
         
-        # Normalizar ruta removiendo prefijo home/ si existe
-        normalized_path = path.replace('home/', '')
+        # Normalizar ruta
+        normalized_path = self.normalize_path(path)
         
         for file_path in hostname_files:
-            # Remover prefijo home/ del config si existe
-            config_path = file_path.replace('home/', '')
+            # Normalizar ruta del config
+            config_path = self.normalize_path(file_path)
             
             # Verificar coincidencia exacta
-            if config_path == normalized_path or config_path == path:
-                logger.debug(f"Ruta {path} está explícitamente incluida en {self.hostname}")
+            if config_path == normalized_path:
+                logger.debug(f"Ruta {normalized_path} está explícitamente incluida en {self.hostname}")
                 return True
                 
             # Verificar si la ruta está dentro de una carpeta especificada
-            if config_path.endswith('/') and (normalized_path.startswith(config_path) or path.startswith(config_path)):
-                logger.debug(f"Ruta {path} está dentro de carpeta explícita {config_path} en {self.hostname}")
+            if config_path.endswith('/') and normalized_path.startswith(config_path):
+                logger.debug(f"Ruta {normalized_path} está dentro de carpeta explícita {config_path} en {self.hostname}")
                 return True
                 
         return False
@@ -174,6 +178,127 @@ class SyncArch:
             
         # Precedencia 3: En common (se procesa por defecto)
         return True, "permitido por configuración común"
+
+    def scan_unmanaged_paths(self) -> List[Path]:
+        """Escanear $HOME en busca de archivos/carpetas no gestionados"""
+        unmanaged = []
+        
+        # Obtener rutas actualmente gestionadas
+        managed_paths = set()
+        
+        # Rutas de common (todo $HOME está gestionado si common contiene "")
+        if "" in self.config.get('common', []):
+            # Si common gestiona todo, solo consideramos archivos explícitamente excluidos
+            base_managed = True
+        else:
+            base_managed = False
+            for path in self.config.get('common', []):
+                managed_paths.add(self.normalize_path(path))
+        
+        # Rutas específicas del hostname
+        if self.hostname in self.config:
+            for path in self.config[self.hostname]:
+                managed_paths.add(self.normalize_path(path))
+        
+        # Escanear $HOME
+        for root, dirs, files in os.walk(HOME):
+            # Excluir directorios que no queremos escanear
+            dirs[:] = [d for d in dirs if not d.startswith('.git') and d not in ['.cache', '.local/share/Trash']]
+            
+            for item in dirs + files:
+                item_path = Path(root) / item
+                relative_path = item_path.relative_to(HOME)
+                normalized_path = str(relative_path)
+                
+                # Verificar si está gestionado
+                is_managed = False
+                
+                if base_managed:
+                    # Si common gestiona todo, verificar si está ignorado o es específico
+                    should_process, reason = self.should_process_path(normalized_path)
+                    is_managed = should_process
+                else:
+                    # Verificar si coincide con alguna ruta gestionada
+                    for managed_path in managed_paths:
+                        if (normalized_path == managed_path or 
+                            normalized_path.startswith(managed_path.rstrip('/') + '/') or
+                            managed_path.endswith('/') and normalized_path.startswith(managed_path)):
+                            is_managed = True
+                            break
+                
+                if not is_managed and item_path.exists():
+                    unmanaged.append(item_path)
+        
+        return unmanaged
+
+    def interactive_discover(self) -> None:
+        """Comando interactivo para descubrir y gestionar archivos no sincronizados"""
+        print("🔍 Escaneando archivos no gestionados en $HOME...")
+        unmanaged = self.scan_unmanaged_paths()
+        
+        if not unmanaged:
+            print("✅ No se encontraron archivos sin gestionar")
+            return
+        
+        print(f"📁 Encontrados {len(unmanaged)} elementos no gestionados")
+        
+        additions = {
+            'common': [],
+            self.hostname: [],
+            'ignore': []
+        }
+        
+        for item_path in unmanaged[:20]:  # Limitar a primeros 20 para no abrumar
+            relative_path = item_path.relative_to(HOME)
+            
+            print(f"\n📄 {relative_path}")
+            print("¿Qué hacer con este elemento?")
+            print("  [c] Agregar a COMMON (sincronizar en todos los equipos)")
+            print(f"  [h] Agregar a {self.hostname.upper()} (solo este equipo)")
+            print("  [i] IGNORE (no sincronizar nunca)")
+            print("  [s] SKIP (omitir por ahora)")
+            
+            while True:
+                choice = input("Elección [c/h/i/s]: ").lower().strip()
+                if choice in ['c', 'h', 'i', 's']:
+                    break
+                print("Opción inválida. Use c, h, i o s.")
+            
+            if choice == 'c':
+                additions['common'].append(str(relative_path))
+                print(f"✅ Agregado a common: {relative_path}")
+            elif choice == 'h':
+                additions[self.hostname].append(str(relative_path))
+                print(f"✅ Agregado a {self.hostname}: {relative_path}")
+            elif choice == 'i':
+                # Para carpetas, agregar patrón con /**
+                pattern = str(relative_path)
+                if item_path.is_dir():
+                    pattern += "/**"
+                additions['ignore'].append(pattern)
+                print(f"✅ Agregado a ignore: {pattern}")
+            else:
+                print(f"⏭️  Omitido: {relative_path}")
+        
+        # Aplicar cambios al config.json
+        if any(additions.values()):
+            self.update_config_with_additions(additions)
+            print("\n🎉 Config.json actualizado con los nuevos elementos")
+        else:
+            print("\n📝 No se realizaron cambios")
+
+    def update_config_with_additions(self, additions: Dict[str, List[str]]) -> None:
+        """Actualizar config.json con nuevas adiciones"""
+        for section, items in additions.items():
+            if items:
+                if section not in self.config:
+                    self.config[section] = []
+                self.config[section].extend(items)
+        
+        # Guardar config.json actualizado
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(self.config, f, indent=2)
+        logger.info(f"Config.json actualizado con {sum(len(items) for items in additions.values())} nuevos elementos")
 
     def run_command(self, cmd: List[str], cwd: Optional[Path] = None, check: bool = True) -> subprocess.CompletedProcess:
         """Ejecutar comando con logging"""
@@ -642,8 +767,8 @@ class SyncArch:
 def main():
     """Función principal"""
     parser = argparse.ArgumentParser(description="Sync-Arch: Sincronización inteligente de dotfiles")
-    parser.add_argument('--mode', choices=['startup', 'shutdown', 'manual'], default='manual',
-                        help='Modo de sincronización')
+    parser.add_argument('--mode', choices=['startup', 'shutdown', 'manual', 'discover'], default='manual',
+                        help='Modo de sincronización o descubrimiento')
     parser.add_argument('--dry-run', action='store_true', default=True,
                         help='Ejecutar en modo simulación (por defecto)')
     parser.add_argument('--force', action='store_true',
@@ -671,6 +796,9 @@ def main():
                 success = sync.startup_sync()
             elif args.mode == 'shutdown':
                 success = sync.shutdown_sync()
+            elif args.mode == 'discover':
+                sync.interactive_discover()
+                success = True
             else:  # manual
                 success = sync.manual_sync(force=args.force)
             

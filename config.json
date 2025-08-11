@@ -1,15 +1,15 @@
 {
   "common": [
-    "home/"
+    ""
   ],
     "archlinux": [
-    "home/.config/hypr/monitors.conf",
-    "home/.config/hypr/nvidia.conf",
-    "home/.config/hypr/userprefs.conf",
-    "home/.local/bin/choose_and_check_tree.py",
-    "home/.local/bin/choose_and_check.py",
-    "home/.local/bin/current.py",
-    "home/.local/bin/tree.py"
+    ".config/hypr/monitors.conf",
+    ".config/hypr/nvidia.conf",
+    ".config/hypr/userprefs.conf",
+    ".local/bin/choose_and_check_tree.py",
+    ".local/bin/choose_and_check.py",
+    ".local/bin/current.py",
+    ".local/bin/tree.py"
   ],
   "system_configs": [
     "/etc/sddm.conf.d/the_hyde_project.conf",
