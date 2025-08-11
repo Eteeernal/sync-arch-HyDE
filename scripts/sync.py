@@ -22,7 +22,7 @@ from core import (
 from core.utils import HOSTNAME, LOCK_FILE, PROJECT_ROOT
 
 # Imports de comandos
-from commands import DiscoverCommand, SyncModes, StatusCommand, CleanupCommand
+from commands import DiscoverCommand, SyncModes, StatusCommand, CleanupCommand, ValidateCommand
 
 # Rutas globales derivadas
 DOTFILES_DIR = PROJECT_ROOT / "dotfiles"
@@ -56,6 +56,7 @@ class SyncArch:
         )
         self.status_cmd = StatusCommand(self.config_manager, self.ignore_manager, self.git_ops)
         self.cleanup_cmd = CleanupCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, dry_run)
+        self.validate_cmd = ValidateCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, HOME)
     
     def run_startup(self) -> bool:
         """Ejecutar sincronización de startup"""
@@ -82,11 +83,15 @@ class SyncArch:
     def run_cleanup(self) -> bool:
         """Ejecutar comando cleanup"""
         return self.cleanup_cmd.run_cleanup()
+    
+    def run_validate(self) -> bool:
+        """Ejecutar comando validate"""
+        return self.validate_cmd.run_validation()
 
 def main():
     """Función principal"""
     parser = argparse.ArgumentParser(description="Sync-Arch: Sincronización inteligente de dotfiles")
-    parser.add_argument('--mode', choices=['startup', 'shutdown', 'manual', 'discover', 'status', 'cleanup'], 
+    parser.add_argument('--mode', choices=['startup', 'shutdown', 'manual', 'discover', 'status', 'cleanup', 'validate'], 
                         default='manual', help='Modo de operación')
     parser.add_argument('--dry-run', action='store_true', default=True,
                         help='Ejecutar en modo simulación (por defecto)')
@@ -125,6 +130,8 @@ def main():
                 success = sync.run_status()
             elif args.mode == 'cleanup':
                 success = sync.run_cleanup()
+            elif args.mode == 'validate':
+                success = sync.run_validate()
             else:
                 print(f"❌ Modo desconocido: {args.mode}")
                 sys.exit(1)

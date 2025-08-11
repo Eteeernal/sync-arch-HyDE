@@ -48,6 +48,7 @@ COMMANDS:
     manual              Sincronización manual (por defecto)
     discover            Descubrir y gestionar archivos no sincronizados
     cleanup             Limpiar archivos ignorados del repositorio
+    validate            Validar consistencia config.json vs repo vs $HOME
     status              Mostrar estado del repositorio
     help                Mostrar esta ayuda
 
@@ -66,6 +67,7 @@ EXAMPLES:
     $0 discover                 # Buscar archivos nuevos para gestionar
     $0 cleanup                  # Limpiar archivos ignorados del repo (dry-run)
     $0 cleanup --no-dry-run     # Limpiar archivos ignorados del repo (real)
+    $0 validate                 # Validar que config.json esté sincronizado
     $0 --force-overwrite        # Sobrescribir archivos existentes (equipo nuevo)
     $0 status                   # Ver estado del repositorio
     $0 manual --force -v        # Sincronización forzada y verbosa
@@ -256,7 +258,7 @@ main() {
         status)
             show_status
             ;;
-        startup|shutdown|manual|discover|cleanup)
+        startup|shutdown|manual|discover|cleanup|validate)
             run_sync "$command" "${args[@]}"
             ;;
         *)
