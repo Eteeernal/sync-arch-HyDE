@@ -1,0 +1,63 @@
+{
+  "common": [
+    ".config/hypr/hyprland.conf",
+    ".config/hypr/keybindings.conf", 
+    ".config/hypr/workspaces.conf",
+    ".config/hypr/windowrules.conf",
+    ".config/hypr/animations.conf",
+    ".config/hypr/themes/",
+    ".config/hypr/animations/",
+    ".config/hypr/hyprlock/",
+    ".config/hypr/workflows/",
+    ".config/waybar/style.css",
+    ".config/waybar/theme.css", 
+    ".config/waybar/user-style.css",
+    ".config/waybar/config.jsonc",
+    ".config/waybar/layouts/",
+    ".config/waybar/modules/",
+    ".config/waybar/includes/",
+    ".config/waybar/scripts/",
+    ".config/hyde/config.toml",
+    ".config/hyde/themes/",
+    ".config/hyde/wallbash/",
+    ".config/kitty/",
+    ".config/rofi/",
+    ".config/dunst/",
+    ".config/fastfetch/",
+    ".config/starship/",
+    ".config/zsh/",
+    ".local/bin/hyde-shell",
+    ".local/bin/hydectl",
+    ".zshrc",
+    ".bashrc"
+  ],
+  "archlinux": [
+    ".config/hypr/monitors.conf",
+    ".config/hypr/nvidia.conf",
+    ".config/hypr/userprefs.conf",
+    ".config/hypr/hyde.conf",
+    ".local/bin/choose_and_check_tree.py",
+    ".local/bin/choose_and_check.py", 
+    ".local/bin/current.py",
+    ".local/bin/tree.py"
+  ],
+  "system_configs": [
+    "/etc/sddm.conf.d/the_hyde_project.conf",
+    "/usr/share/sddm/themes/Candy/"
+  ],
+  "ignore": [
+    "**/*.log",
+    "**/.cache/**",
+    "**/.backup*",
+    ".config/waybar/layouts/backup/**",
+    ".config/Code/**",
+    ".config/Cursor/**",
+    ".config/google-chrome/**",
+    ".config/spotify/**",
+    ".config/pulse/**",
+    ".config/session/**",
+    ".config/hypr_backup_*/**",
+    ".config/cfg_backups/**",
+    ".config/dconf/**"
+  ]
+}

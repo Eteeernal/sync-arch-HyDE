@@ -1,0 +1,12 @@
+[Unit]
+Description=Sync-Arch dotfiles synchronization on startup
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/proyectos/sync-arch/scripts/sync.sh startup --no-dry-run
+Environment=HOME=%h
+Environment=USER=%i
+
+[Install]
+WantedBy=default.target

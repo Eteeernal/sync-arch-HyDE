@@ -1,0 +1,13 @@
+# Sync-Arch Requirements
+# Este proyecto utiliza principalmente bibliotecas estándar de Python
+# Las dependencias del sistema se instalan automáticamente en Arch Linux
+
+# Dependencias del sistema (instaladas automáticamente):
+# - git
+# - python3
+# - stow
+
+# Para desarrollo/testing (opcional):
+# pytest>=7.0.0
+# black>=22.0.0
+# flake8>=4.0.0

@@ -1,0 +1,51 @@
+# Sync-Arch .gitignore
+
+# Logs y archivos de estado
+*.log
+sync.log
+.sync-*
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Archivos de backup automáticos
+*.backup
+*.bak
+*~
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Lockfiles temporales
+*.lock
+/tmp/
+
+# Archivos de configuración personal que no deben commitearse
+.env
+.secrets
+
+# Cache de aplicaciones que pueden estar en dotfiles
+**/cache/
+**/.cache/
+**/Cache/
+
+# Archivos específicos que nunca deben sincronizarse
+**/pulse/
+**/session/
+**/dconf/
+**/Code/User/workspaceStorage/
+**/google-chrome/
+**/spotify/
+
+# Conversación de desarrollo (específico de este proyecto)
+conversacion.txt
