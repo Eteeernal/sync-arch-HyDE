@@ -56,7 +56,7 @@ class SyncArch:
         )
         self.status_cmd = StatusCommand(self.config_manager, self.ignore_manager, self.git_ops)
         self.cleanup_cmd = CleanupCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, dry_run)
-        self.validate_cmd = ValidateCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, HOME)
+        self.validate_cmd = ValidateCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, HOME, dry_run)
     
     def run_startup(self) -> bool:
         """Ejecutar sincronización de startup"""

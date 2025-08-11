@@ -15,12 +15,13 @@ logger = logging.getLogger(__name__)
 class ValidateCommand:
     """Comando de validación de sincronización"""
     
-    def __init__(self, config_manager, ignore_manager, dotfiles_dir: Path, home_dir: Path):
+    def __init__(self, config_manager, ignore_manager, dotfiles_dir: Path, home_dir: Path, dry_run: bool = True):
         self.config = config_manager
         self.ignore = ignore_manager
         self.dotfiles_dir = dotfiles_dir
         self.home_dir = home_dir
         self.hostname = ignore_manager.hostname
+        self.dry_run = dry_run
     
     def scan_missing_items(self) -> Dict[str, List[Dict]]:
         """Escanear elementos en config.json que no están correctamente sincronizados"""
@@ -240,7 +241,8 @@ class ValidateCommand:
     
     def run_validation(self) -> bool:
         """Ejecutar validación completa"""
-        print("🔍 Iniciando validación de sincronización...")
+        dry_status = " [DRY-RUN]" if self.dry_run else ""
+        print(f"🔍 Iniciando validación de sincronización...{dry_status}")
         print("🔍 Verificando consistencia entre config.json, repositorio y $HOME...")
         print()
         
