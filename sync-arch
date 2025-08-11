@@ -1,0 +1,286 @@
+#!/usr/bin/env bash
+
+# sync-arch - Global CLI command for Sync-Arch dotfile synchronization
+# This script can be installed system-wide and will automatically locate
+# and execute the main sync-arch installation.
+
+set -euo pipefail
+
+# ============================================================================
+# CONFIGURACIÓN GLOBAL
+# ============================================================================
+
+# Colores para output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly PURPLE='\033[0;35m'
+readonly CYAN='\033[0;36m'
+readonly WHITE='\033[1;37m'
+readonly NC='\033[0m' # No Color
+
+# Información del comando
+readonly COMMAND_NAME="sync-arch"
+readonly VERSION="1.0.0"
+
+# ============================================================================
+# FUNCIONES UTILITARIAS
+# ============================================================================
+
+info() {
+    echo -e "${BLUE}[INFO]${NC} $*" >&2
+}
+
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $*" >&2
+}
+
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $*" >&2
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $*" >&2
+}
+
+debug() {
+    if [[ "${SYNC_ARCH_DEBUG:-}" == "1" ]]; then
+        echo -e "${PURPLE}[DEBUG]${NC} $*" >&2
+    fi
+}
+
+# ============================================================================
+# DETECCIÓN DE INSTALACIÓN
+# ============================================================================
+
+find_sync_arch_installation() {
+    local search_paths=(
+        # Ubicaciones comunes de proyectos
+        "$HOME/proyectos/sync-arch"
+        "$HOME/projects/sync-arch"
+        "$HOME/sync-arch"
+        "$HOME/.sync-arch"
+        "$HOME/.config/sync-arch"
+        "$HOME/.local/share/sync-arch"
+        
+        # Ubicaciones de desarrollo
+        "$HOME/dev/sync-arch"
+        "$HOME/development/sync-arch"
+        "$HOME/code/sync-arch"
+        "$HOME/src/sync-arch"
+        
+        # Ubicaciones del proyecto actual
+        "$(pwd)/sync-arch"
+        "$(dirname "$0")"
+        
+        # Variable de entorno personalizada
+        "${SYNC_ARCH_HOME:-}"
+    )
+    
+    debug "Buscando instalación de sync-arch..."
+    
+    for path in "${search_paths[@]}"; do
+        if [[ -n "$path" && -d "$path" ]]; then
+            local script_path="$path/scripts/sync.sh"
+            if [[ -f "$script_path" && -x "$script_path" ]]; then
+                debug "Encontrado en: $path"
+                echo "$path"
+                return 0
+            fi
+        fi
+    done
+    
+    return 1
+}
+
+detect_from_git() {
+    # Intentar detectar desde repositorios git clonados
+    local git_locations=(
+        "$HOME"
+        "$HOME/proyectos"
+        "$HOME/projects"
+        "$HOME/dev"
+        "$HOME/development"
+        "$HOME/code"
+        "$HOME/src"
+    )
+    
+    debug "Buscando repositorio git sync-arch..."
+    
+    for base_dir in "${git_locations[@]}"; do
+        if [[ -d "$base_dir" ]]; then
+            while IFS= read -r -d '' repo_dir; do
+                if [[ -f "$repo_dir/.git/config" ]]; then
+                    if grep -q "sync-arch" "$repo_dir/.git/config" 2>/dev/null; then
+                        local script_path="$repo_dir/scripts/sync.sh"
+                        if [[ -f "$script_path" && -x "$script_path" ]]; then
+                            debug "Encontrado repositorio git en: $repo_dir"
+                            echo "$repo_dir"
+                            return 0
+                        fi
+                    fi
+                fi
+            done < <(find "$base_dir" -maxdepth 2 -type d -name ".git" -exec dirname {} \; -print0 2>/dev/null || true)
+        fi
+    done
+    
+    return 1
+}
+
+# ============================================================================
+# FUNCIONES PRINCIPALES
+# ============================================================================
+
+show_version() {
+    echo -e "${WHITE}$COMMAND_NAME${NC} v${VERSION}"
+    echo "Sistema de sincronización inteligente de dotfiles"
+    echo ""
+    echo "Ubicación actual: ${SYNC_ARCH_INSTALLATION:-"No detectada"}"
+}
+
+show_help() {
+    cat << EOF
+${WHITE}$COMMAND_NAME${NC} - Sistema de sincronización inteligente de dotfiles
+
+${YELLOW}USAGE:${NC}
+    $COMMAND_NAME [COMMAND] [OPTIONS]
+
+${YELLOW}COMMANDS:${NC}
+    ${GREEN}startup${NC}             Sincronización en inicio de sesión
+    ${GREEN}shutdown${NC}            Sincronización antes de apagado/suspensión
+    ${GREEN}manual${NC}              Sincronización manual (por defecto)
+    ${GREEN}discover${NC}            Descubrir y gestionar archivos no sincronizados
+    ${GREEN}cleanup${NC}             Limpiar archivos ignorados del repositorio
+    ${GREEN}validate${NC}            Validar consistencia config.json vs repo vs \$HOME
+    ${GREEN}deploy${NC}              Desplegar symlinks con backup automático
+    ${GREEN}rollback${NC} [backup]   Restaurar desde backup (último si no se especifica)
+    ${GREEN}list-backups${NC}        Listar backups disponibles
+    ${GREEN}status${NC}              Mostrar estado del repositorio
+    ${GREEN}version${NC}             Mostrar versión del comando
+    ${GREEN}help${NC}                Mostrar esta ayuda
+
+${YELLOW}OPTIONS:${NC}
+    ${CYAN}--dry-run${NC}           Ejecutar en modo simulación (POR DEFECTO)
+    ${CYAN}--no-dry-run${NC}        Ejecutar cambios reales
+    ${CYAN}--force${NC}             Forzar sincronización sin verificar cambios
+    ${CYAN}--force-overwrite${NC}   Sobrescribir archivos existentes automáticamente
+    ${CYAN}--verbose, -v${NC}       Activar logging detallado
+    ${CYAN}--quiet, -q${NC}         Modo silencioso (solo errores)
+
+${YELLOW}EXAMPLES:${NC}
+    $COMMAND_NAME                          # Sincronización manual en dry-run
+    $COMMAND_NAME --no-dry-run            # Sincronización manual real
+    $COMMAND_NAME startup --no-dry-run     # Sincronización de startup real
+    $COMMAND_NAME discover                 # Buscar archivos nuevos para gestionar
+    $COMMAND_NAME deploy                   # Desplegar symlinks con backup (dry-run)
+    $COMMAND_NAME deploy --no-dry-run      # Desplegar symlinks con backup (real)
+    $COMMAND_NAME rollback                 # Restaurar último backup
+    $COMMAND_NAME list-backups             # Ver backups disponibles
+    $COMMAND_NAME status                   # Ver estado del repositorio
+
+${YELLOW}ENVIRONMENT VARIABLES:${NC}
+    ${CYAN}SYNC_ARCH_HOME${NC}      Ubicación manual de la instalación sync-arch
+    ${CYAN}SYNC_ARCH_DEBUG${NC}     Activar modo debug (SYNC_ARCH_DEBUG=1)
+
+${YELLOW}INSTALLATION LOCATIONS:${NC}
+    El comando busca automáticamente la instalación sync-arch en:
+    • \$SYNC_ARCH_HOME (si está definido)
+    • \$HOME/proyectos/sync-arch
+    • \$HOME/projects/sync-arch
+    • \$HOME/sync-arch
+    • \$HOME/.sync-arch
+    • Repositorios git con nombre 'sync-arch'
+
+${YELLOW}INSTALLATION:${NC}
+    Para instalar este comando globalmente:
+    
+    # Copiar a ubicación global
+    sudo cp sync-arch /usr/local/bin/
+    sudo chmod +x /usr/local/bin/sync-arch
+    
+    # O crear symlink (recomendado para desarrollo)
+    sudo ln -sf "$(pwd)/sync-arch" /usr/local/bin/sync-arch
+
+${YELLOW}MORE INFO:${NC}
+    Documentación: https://github.com/your-username/sync-arch
+    Issues: https://github.com/your-username/sync-arch/issues
+EOF
+}
+
+execute_sync_arch() {
+    local installation_dir
+    
+    # Buscar instalación
+    if ! installation_dir=$(find_sync_arch_installation); then
+        if ! installation_dir=$(detect_from_git); then
+            error "No se pudo encontrar la instalación de sync-arch"
+            echo ""
+            echo "Ubicaciones buscadas:"
+            echo "  • \$HOME/proyectos/sync-arch"
+            echo "  • \$HOME/projects/sync-arch" 
+            echo "  • \$HOME/sync-arch"
+            echo "  • \$HOME/.sync-arch"
+            echo "  • Repositorios git con 'sync-arch'"
+            echo ""
+            echo "Soluciones:"
+            echo "  1. Definir variable: export SYNC_ARCH_HOME=/ruta/a/sync-arch"
+            echo "  2. Mover instalación a una ubicación estándar"
+            echo "  3. Ejecutar desde el directorio del proyecto"
+            echo ""
+            echo "Para debug: SYNC_ARCH_DEBUG=1 $COMMAND_NAME"
+            exit 1
+        fi
+    fi
+    
+    export SYNC_ARCH_INSTALLATION="$installation_dir"
+    debug "Usando instalación: $installation_dir"
+    
+    local script_path="$installation_dir/scripts/sync.sh"
+    
+    # Verificar que el script existe y es ejecutable
+    if [[ ! -f "$script_path" ]]; then
+        error "Script principal no encontrado: $script_path"
+        exit 1
+    fi
+    
+    if [[ ! -x "$script_path" ]]; then
+        error "Script principal no es ejecutable: $script_path"
+        echo "Solución: chmod +x '$script_path'"
+        exit 1
+    fi
+    
+    # Cambiar al directorio de la instalación y ejecutar
+    debug "Ejecutando: $script_path $*"
+    cd "$installation_dir"
+    exec "$script_path" "$@"
+}
+
+# ============================================================================
+# MAIN
+# ============================================================================
+
+main() {
+    # Manejar comandos especiales primero
+    case "${1:-}" in
+        version|--version|-V)
+            show_version
+            exit 0
+            ;;
+        help|--help|-h)
+            show_help
+            exit 0
+            ;;
+        "")
+            # Sin argumentos, usar comportamiento por defecto (manual)
+            execute_sync_arch "manual"
+            ;;
+        *)
+            # Pasar todos los argumentos al script principal
+            execute_sync_arch "$@"
+            ;;
+    esac
+}
+
+# Ejecutar función principal con todos los argumentos
+main "$@"
