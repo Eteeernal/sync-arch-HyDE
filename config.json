@@ -2,12 +2,12 @@
   "common": [
     "home/"
   ],
-  "archlinux": [
+    "archlinux": [
     "home/.config/hypr/monitors.conf",
     "home/.config/hypr/nvidia.conf",
     "home/.config/hypr/userprefs.conf",
     "home/.local/bin/choose_and_check_tree.py",
-    "home/.local/bin/choose_and_check.py", 
+    "home/.local/bin/choose_and_check.py",
     "home/.local/bin/current.py",
     "home/.local/bin/tree.py"
   ],

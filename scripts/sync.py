@@ -18,6 +18,7 @@ import argparse
 import logging
 import hashlib
 import time
+import fnmatch
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
@@ -109,6 +110,70 @@ class SyncArch:
         except json.JSONDecodeError as e:
             logger.error(f"Error al parsear configuración JSON: {e}")
             raise
+
+    def should_ignore_path(self, path: str) -> bool:
+        """Verificar si una ruta debe ser ignorada según patrones en config.json"""
+        ignore_patterns = self.config.get('ignore', [])
+        
+        # Normalizar ruta removiendo prefijo home/ si existe
+        normalized_path = path.replace('home/', '')
+        
+        for pattern in ignore_patterns:
+            # Usar fnmatch para patrones con wildcards
+            if fnmatch.fnmatch(normalized_path, pattern):
+                logger.debug(f"Ruta {normalized_path} coincide con patrón ignore: {pattern}")
+                return True
+                
+            # También verificar ruta completa con home/
+            if fnmatch.fnmatch(path, pattern):
+                logger.debug(f"Ruta {path} coincide con patrón ignore: {pattern}")
+                return True
+                
+        return False
+
+    def is_explicitly_included(self, path: str) -> bool:
+        """Verificar si una ruta está explícitamente incluida en hostname específico"""
+        if self.hostname not in self.config:
+            return False
+            
+        hostname_files = self.config[self.hostname]
+        
+        # Normalizar ruta removiendo prefijo home/ si existe
+        normalized_path = path.replace('home/', '')
+        
+        for file_path in hostname_files:
+            # Remover prefijo home/ del config si existe
+            config_path = file_path.replace('home/', '')
+            
+            # Verificar coincidencia exacta
+            if config_path == normalized_path or config_path == path:
+                logger.debug(f"Ruta {path} está explícitamente incluida en {self.hostname}")
+                return True
+                
+            # Verificar si la ruta está dentro de una carpeta especificada
+            if config_path.endswith('/') and (normalized_path.startswith(config_path) or path.startswith(config_path)):
+                logger.debug(f"Ruta {path} está dentro de carpeta explícita {config_path} en {self.hostname}")
+                return True
+                
+        return False
+
+    def should_process_path(self, path: str) -> tuple[bool, str]:
+        """
+        Determinar si una ruta debe procesarse según precedencia: hostname > ignore > common
+        
+        Returns:
+            tuple[bool, str]: (should_process, reason)
+        """
+        # Precedencia 1: Explícitamente incluido en hostname específico
+        if self.is_explicitly_included(path):
+            return True, f"explícitamente incluido en {self.hostname}"
+            
+        # Precedencia 2: En lista ignore
+        if self.should_ignore_path(path):
+            return False, "coincide con patrón ignore"
+            
+        # Precedencia 3: En common (se procesa por defecto)
+        return True, "permitido por configuración común"
 
     def run_command(self, cmd: List[str], cwd: Optional[Path] = None, check: bool = True) -> subprocess.CompletedProcess:
         """Ejecutar comando con logging"""
@@ -208,7 +273,7 @@ class SyncArch:
         # Obtener rutas que serían gestionadas por stow
         managed_paths = []
         
-        # Rutas de common
+        # Rutas de common (aplicando lógica ignore)
         for path in self.config.get('common', []):
             if path.endswith('/'):
                 # Es carpeta, explorar contenido
@@ -218,18 +283,31 @@ class SyncArch:
                         for file in files:
                             file_path = Path(root) / file
                             relative_path = file_path.relative_to(DOTFILES_DIR / "common")
-                            target_path = HOME / relative_path
-                            managed_paths.append(target_path)
+                            
+                            # Aplicar lógica ignore con precedencia
+                            should_process, reason = self.should_process_path(str(relative_path))
+                            if should_process:
+                                target_path = HOME / relative_path
+                                managed_paths.append(target_path)
+                                logger.debug(f"Archivo gestionado: {relative_path} - {reason}")
+                            else:
+                                logger.debug(f"Archivo ignorado: {relative_path} - {reason}")
             else:
                 # Es archivo específico
-                target_path = HOME / path.lstrip('./')
-                managed_paths.append(target_path)
+                should_process, reason = self.should_process_path(path)
+                if should_process:
+                    target_path = HOME / path.lstrip('./')
+                    managed_paths.append(target_path)
+                    logger.debug(f"Archivo gestionado: {path} - {reason}")
+                else:
+                    logger.debug(f"Archivo ignorado: {path} - {reason}")
         
-        # Rutas específicas del hostname
+        # Rutas específicas del hostname (siempre se procesan por precedencia)
         if self.hostname in self.config:
             for path in self.config[self.hostname]:
                 target_path = HOME / path.lstrip('./')
                 managed_paths.append(target_path)
+                logger.debug(f"Archivo explícito de {self.hostname}: {path}")
         
         # Verificar conflictos
         for target_path in managed_paths:
@@ -348,8 +426,20 @@ class SyncArch:
             # Migrar cada archivo específico a su hostname correspondiente
             success = True
             for file_path, hostname in file_assignments:
+                # Verificar si el archivo debe procesarse según lógica ignore
+                should_process, reason = self.should_process_path(file_path)
+                if not should_process:
+                    logger.info(f"Omitiendo migración de {file_path}: {reason}")
+                    continue
+                
                 source_file = DOTFILES_DIR / "common" / file_path.lstrip('./')
                 dest_file = DOTFILES_DIR / hostname / file_path.lstrip('./')
+                
+                # Si el archivo no existe en common pero está explícitamente incluido en hostname,
+                # es normal (archivo que no estaba en common originalmente)
+                if not source_file.exists() and self.is_explicitly_included(file_path):
+                    logger.debug(f"Archivo {file_path} no existe en common pero está explícitamente en {hostname} - OK")
+                    continue
                 
                 if not self.backup_and_migrate_file(source_file, dest_file):
                     success = False
