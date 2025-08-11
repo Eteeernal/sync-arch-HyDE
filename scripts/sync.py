@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Imports de módulos core
 from core import (
     ConfigManager, IgnoreManager, GitOperations, 
-    StowOperations, ConflictResolver, SyncLock, setup_logging
+    StowOperations, ConflictResolver, PathUtils, SyncLock, setup_logging
 )
 from core.utils import HOSTNAME, LOCK_FILE, PROJECT_ROOT
 
@@ -55,6 +55,9 @@ class SyncArch:
             self.stow_ops, self.conflict_resolver, force_overwrite
         )
         self.status_cmd = StatusCommand(self.config_manager, self.ignore_manager, self.git_ops)
+        # Inicializar PathUtils
+        self.path_utils = PathUtils(self.config_manager, DOTFILES_DIR, HOME, self.ignore_manager.hostname)
+        
         self.cleanup_cmd = CleanupCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, dry_run)
         self.validate_cmd = ValidateCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, HOME, dry_run)
         self.deploy_cmd = DeployCommand(self.config_manager, self.ignore_manager, self.stow_ops, DOTFILES_DIR, HOME, dry_run)

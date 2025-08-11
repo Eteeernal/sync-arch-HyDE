@@ -140,72 +140,68 @@ show_version() {
 }
 
 show_help() {
-    cat << EOF
-${WHITE}$COMMAND_NAME${NC} - Sistema de sincronización inteligente de dotfiles
-
-${YELLOW}USAGE:${NC}
-    $COMMAND_NAME [COMMAND] [OPTIONS]
-
-${YELLOW}COMMANDS:${NC}
-    ${GREEN}startup${NC}             Sincronización en inicio de sesión
-    ${GREEN}shutdown${NC}            Sincronización antes de apagado/suspensión
-    ${GREEN}manual${NC}              Sincronización manual (por defecto)
-    ${GREEN}discover${NC}            Descubrir y gestionar archivos no sincronizados
-    ${GREEN}cleanup${NC}             Limpiar archivos ignorados del repositorio
-    ${GREEN}validate${NC}            Validar consistencia config.json vs repo vs \$HOME
-    ${GREEN}deploy${NC}              Desplegar symlinks con backup automático
-    ${GREEN}rollback${NC} [backup]   Restaurar desde backup (último si no se especifica)
-    ${GREEN}list-backups${NC}        Listar backups disponibles
-    ${GREEN}status${NC}              Mostrar estado del repositorio
-    ${GREEN}version${NC}             Mostrar versión del comando
-    ${GREEN}help${NC}                Mostrar esta ayuda
-
-${YELLOW}OPTIONS:${NC}
-    ${CYAN}--dry-run${NC}           Ejecutar en modo simulación (POR DEFECTO)
-    ${CYAN}--no-dry-run${NC}        Ejecutar cambios reales
-    ${CYAN}--force${NC}             Forzar sincronización sin verificar cambios
-    ${CYAN}--force-overwrite${NC}   Sobrescribir archivos existentes automáticamente
-    ${CYAN}--verbose, -v${NC}       Activar logging detallado
-    ${CYAN}--quiet, -q${NC}         Modo silencioso (solo errores)
-
-${YELLOW}EXAMPLES:${NC}
-    $COMMAND_NAME                          # Sincronización manual en dry-run
-    $COMMAND_NAME --no-dry-run            # Sincronización manual real
-    $COMMAND_NAME startup --no-dry-run     # Sincronización de startup real
-    $COMMAND_NAME discover                 # Buscar archivos nuevos para gestionar
-    $COMMAND_NAME deploy                   # Desplegar symlinks con backup (dry-run)
-    $COMMAND_NAME deploy --no-dry-run      # Desplegar symlinks con backup (real)
-    $COMMAND_NAME rollback                 # Restaurar último backup
-    $COMMAND_NAME list-backups             # Ver backups disponibles
-    $COMMAND_NAME status                   # Ver estado del repositorio
-
-${YELLOW}ENVIRONMENT VARIABLES:${NC}
-    ${CYAN}SYNC_ARCH_HOME${NC}      Ubicación manual de la instalación sync-arch
-    ${CYAN}SYNC_ARCH_DEBUG${NC}     Activar modo debug (SYNC_ARCH_DEBUG=1)
-
-${YELLOW}INSTALLATION LOCATIONS:${NC}
-    El comando busca automáticamente la instalación sync-arch en:
-    • \$SYNC_ARCH_HOME (si está definido)
-    • \$HOME/proyectos/sync-arch
-    • \$HOME/projects/sync-arch
-    • \$HOME/sync-arch
-    • \$HOME/.sync-arch
-    • Repositorios git con nombre 'sync-arch'
-
-${YELLOW}INSTALLATION:${NC}
-    Para instalar este comando globalmente:
+    printf "${WHITE}%s${NC} - Sistema de sincronización inteligente de dotfiles\n\n" "$COMMAND_NAME"
     
-    # Copiar a ubicación global
-    sudo cp sync-arch /usr/local/bin/
-    sudo chmod +x /usr/local/bin/sync-arch
+    printf "${YELLOW}USAGE:${NC}\n"
+    printf "    %s [COMMAND] [OPTIONS]\n\n" "$COMMAND_NAME"
     
-    # O crear symlink (recomendado para desarrollo)
-    sudo ln -sf "$(pwd)/sync-arch" /usr/local/bin/sync-arch
-
-${YELLOW}MORE INFO:${NC}
-    Documentación: https://github.com/your-username/sync-arch
-    Issues: https://github.com/your-username/sync-arch/issues
-EOF
+    printf "${YELLOW}COMMANDS:${NC}\n"
+    printf "    ${GREEN}%-15s${NC} %s\n" "startup" "Sincronización en inicio de sesión"
+    printf "    ${GREEN}%-15s${NC} %s\n" "shutdown" "Sincronización antes de apagado/suspensión"
+    printf "    ${GREEN}%-15s${NC} %s\n" "manual" "Sincronización manual (por defecto)"
+    printf "    ${GREEN}%-15s${NC} %s\n" "discover" "Descubrir y gestionar archivos no sincronizados"
+    printf "    ${GREEN}%-15s${NC} %s\n" "cleanup" "Limpiar archivos ignorados del repositorio"
+    printf "    ${GREEN}%-15s${NC} %s\n" "validate" "Validar consistencia config.json vs repo vs \$HOME"
+    printf "    ${GREEN}%-15s${NC} %s\n" "deploy" "Desplegar symlinks con backup automático"
+    printf "    ${GREEN}%-15s${NC} %s\n" "rollback [backup]" "Restaurar desde backup (último si no se especifica)"
+    printf "    ${GREEN}%-15s${NC} %s\n" "list-backups" "Listar backups disponibles"
+    printf "    ${GREEN}%-15s${NC} %s\n" "status" "Mostrar estado del repositorio"
+    printf "    ${GREEN}%-15s${NC} %s\n" "version" "Mostrar versión del comando"
+    printf "    ${GREEN}%-15s${NC} %s\n\n" "help" "Mostrar esta ayuda"
+    
+    printf "${YELLOW}OPTIONS:${NC}\n"
+    printf "    ${CYAN}%-20s${NC} %s\n" "--dry-run" "Ejecutar en modo simulación (POR DEFECTO)"
+    printf "    ${CYAN}%-20s${NC} %s\n" "--no-dry-run" "Ejecutar cambios reales"
+    printf "    ${CYAN}%-20s${NC} %s\n" "--force" "Forzar sincronización sin verificar cambios"
+    printf "    ${CYAN}%-20s${NC} %s\n" "--force-overwrite" "Sobrescribir archivos existentes automáticamente"
+    printf "    ${CYAN}%-20s${NC} %s\n" "--verbose, -v" "Activar logging detallado"
+    printf "    ${CYAN}%-20s${NC} %s\n\n" "--quiet, -q" "Modo silencioso (solo errores)"
+    
+    printf "${YELLOW}EXAMPLES:${NC}\n"
+    printf "    %-35s %s\n" "$COMMAND_NAME" "# Sincronización manual en dry-run"
+    printf "    %-35s %s\n" "$COMMAND_NAME --no-dry-run" "# Sincronización manual real"
+    printf "    %-35s %s\n" "$COMMAND_NAME startup --no-dry-run" "# Sincronización de startup real"
+    printf "    %-35s %s\n" "$COMMAND_NAME discover" "# Buscar archivos nuevos para gestionar"
+    printf "    %-35s %s\n" "$COMMAND_NAME deploy" "# Desplegar symlinks con backup (dry-run)"
+    printf "    %-35s %s\n" "$COMMAND_NAME deploy --no-dry-run" "# Desplegar symlinks con backup (real)"
+    printf "    %-35s %s\n" "$COMMAND_NAME rollback" "# Restaurar último backup"
+    printf "    %-35s %s\n" "$COMMAND_NAME list-backups" "# Ver backups disponibles"
+    printf "    %-35s %s\n\n" "$COMMAND_NAME status" "# Ver estado del repositorio"
+    
+    printf "${YELLOW}ENVIRONMENT VARIABLES:${NC}\n"
+    printf "    ${CYAN}%-20s${NC} %s\n" "SYNC_ARCH_HOME" "Ubicación manual de la instalación sync-arch"
+    printf "    ${CYAN}%-20s${NC} %s\n\n" "SYNC_ARCH_DEBUG" "Activar modo debug (SYNC_ARCH_DEBUG=1)"
+    
+    printf "${YELLOW}INSTALLATION LOCATIONS:${NC}\n"
+    printf "    El comando busca automáticamente la instalación sync-arch en:\n"
+    printf "    • \$SYNC_ARCH_HOME (si está definido)\n"
+    printf "    • \$HOME/proyectos/sync-arch\n"
+    printf "    • \$HOME/projects/sync-arch\n"
+    printf "    • \$HOME/sync-arch\n"
+    printf "    • \$HOME/.sync-arch\n"
+    printf "    • Repositorios git con nombre 'sync-arch'\n\n"
+    
+    printf "${YELLOW}INSTALLATION:${NC}\n"
+    printf "    Para instalar este comando globalmente:\n\n"
+    printf "    # Usar el instalador automático (recomendado)\n"
+    printf "    ./install-cli.sh\n\n"
+    printf "    # O manualmente\n"
+    printf "    sudo cp sync-arch /usr/local/bin/\n"
+    printf "    sudo chmod +x /usr/local/bin/sync-arch\n\n"
+    
+    printf "${YELLOW}MORE INFO:${NC}\n"
+    printf "    Documentación: https://github.com/your-username/sync-arch\n"
+    printf "    Issues: https://github.com/your-username/sync-arch/issues\n"
 }
 
 execute_sync_arch() {

@@ -365,6 +365,31 @@ def run_initial_sync() -> bool:
         error(f"Error ejecutando sincronización: {e}")
         return False
 
+def install_global_cli():
+    """Instalar comando CLI global sync-arch"""
+    log("Instalando comando CLI global sync-arch...")
+    
+    cli_installer = REPO_DIR / "install-cli.sh"
+    
+    if not cli_installer.exists():
+        warning("Instalador CLI no encontrado, saltando instalación global")
+        return True
+    
+    try:
+        # Ejecutar el instalador CLI
+        result = subprocess.run([str(cli_installer)], check=True, capture_output=True, text=True)
+        success("Comando global 'sync-arch' instalado exitosamente")
+        info("Ahora puedes usar 'sync-arch' desde cualquier directorio")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        warning("No se pudo instalar el comando global (requiere sudo)")
+        info("Puedes instalarlo manualmente ejecutando: sudo ./install-cli.sh")
+        return True  # No falla la instalación principal
+    except Exception as e:
+        warning(f"Error instalando CLI global: {e}")
+        return True  # No falla la instalación principal
+
 def show_post_install_info():
     """Mostrar información post-instalación"""
     print(f"\n{Colors.GREEN}{'='*60}")
@@ -378,10 +403,12 @@ def show_post_install_info():
     print(f"  • Logs: {Colors.CYAN}{HOME}/.local/state/sync-arch/{Colors.NC}")
     
     print(f"\n{Colors.WHITE}🚀 COMANDOS DISPONIBLES:{Colors.NC}")
-    print(f"  • {Colors.GREEN}./scripts/sync.sh{Colors.NC}           - Sincronización manual")
-    print(f"  • {Colors.GREEN}./scripts/sync.sh status{Colors.NC}    - Ver estado del repositorio")
-    print(f"  • {Colors.GREEN}./scripts/sync.sh --no-dry-run{Colors.NC} - Sincronización real")
-    print(f"  • {Colors.GREEN}./scripts/sync.sh help{Colors.NC}      - Ayuda detallada")
+    print(f"  • {Colors.GREEN}sync-arch{Colors.NC}                   - Comando global (recomendado)")
+    print(f"  • {Colors.GREEN}sync-arch status{Colors.NC}            - Ver estado del repositorio")
+    print(f"  • {Colors.GREEN}sync-arch discover{Colors.NC}          - Gestionar archivos no sincronizados")
+    print(f"  • {Colors.GREEN}sync-arch --no-dry-run{Colors.NC}      - Sincronización real")
+    print(f"  • {Colors.GREEN}sync-arch --help{Colors.NC}            - Ayuda detallada")
+    print(f"  • {Colors.BLUE}./scripts/sync.sh{Colors.NC}            - Comando local (alternativo)")
     
     print(f"\n{Colors.WHITE}⚙️  SERVICIOS SYSTEMD:{Colors.NC}")
     print(f"  • {Colors.BLUE}sync-arch-startup.service{Colors.NC}  - Sincronización al iniciar sesión")
@@ -393,9 +420,10 @@ def show_post_install_info():
     
     print(f"\n{Colors.WHITE}📝 PRÓXIMOS PASOS:{Colors.NC}")
     print("  1. Edita config.json para agregar/quitar dotfiles")
-    print("  2. Ejecuta ./scripts/sync.sh para probar la sincronización")
-    print("  3. Configura un repositorio Git remoto si deseas sincronización entre equipos")
-    print("  4. Los servicios systemd se ejecutarán automáticamente en el próximo inicio/apagado")
+    print("  2. Ejecuta 'sync-arch discover' para gestionar archivos adicionales") 
+    print("  3. Ejecuta 'sync-arch --no-dry-run' para aplicar cambios reales")
+    print("  4. Configura un repositorio Git remoto si deseas sincronización entre equipos")
+    print("  5. Los servicios systemd se ejecutarán automáticamente en el próximo inicio/apagado")
     
     print(f"\n{Colors.WHITE}🔗 CONFIGURACIÓN GIT REMOTO (OPCIONAL):{Colors.NC}")
     print("  git remote add origin <tu-repositorio-git-privado>")
@@ -449,7 +477,11 @@ def main():
             error("Error en sincronización inicial")
             sys.exit(1)
         
-        # Paso 7: Mostrar información final
+        # Paso 7: Instalar CLI global
+        if not install_global_cli():
+            warning("Error instalando CLI global, continuando...")
+        
+        # Paso 8: Mostrar información final
         show_post_install_info()
         
     except KeyboardInterrupt:

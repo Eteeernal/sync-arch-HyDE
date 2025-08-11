@@ -22,6 +22,10 @@ class ValidateCommand:
         self.home_dir = home_dir
         self.hostname = ignore_manager.hostname
         self.dry_run = dry_run
+        
+        # Importar PathUtils del core
+        from core.path_utils import PathUtils
+        self.path_utils = PathUtils(config_manager, dotfiles_dir, home_dir, self.hostname)
     
     def scan_missing_items(self) -> Dict[str, List[Dict]]:
         """Escanear elementos en config.json que no están correctamente sincronizados"""
@@ -132,11 +136,7 @@ class ValidateCommand:
     
     def get_repo_path(self, source: str, normalized_path: str) -> Path:
         """Obtener la ruta en el repositorio para un archivo"""
-        if source == 'common':
-            return self.dotfiles_dir / "common" / "home" / normalized_path
-        else:
-            # source es el hostname (ej: "archlinux")
-            return self.dotfiles_dir / source / "home" / normalized_path
+        return self.path_utils.get_repo_path(source, normalized_path)
     
     def show_validation_report(self, issues: Dict[str, List[Dict]]) -> None:
         """Mostrar reporte de validación"""

@@ -1,0 +1,1 @@
+../../../dotfiles/archlinux/home/.local/bin/choose_and_check.py

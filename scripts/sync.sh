@@ -207,7 +207,7 @@ run_sync() {
     
     # Ejecutar script Python
     local start_time=$(date +%s)
-    local success=true
+    local success=0
     
     if python3 "$SYNC_PY" "${python_args[@]}"; then
         local duration=$(($(date +%s) - start_time))
@@ -229,7 +229,7 @@ run_sync() {
         error "Sincronización falló después de ${duration}s"
         
         notify_user "Error en sincronización de dotfiles" "critical"
-        success=false
+        success=1
     fi
     
     return $success

@@ -7,6 +7,7 @@ Módulos principales para la funcionalidad del sistema:
 - git_ops: Operaciones Git
 - stow_ops: Operaciones GNU Stow
 - conflicts: Resolución de conflictos
+- path_utils: Utilidades de rutas centralizadas
 - utils: Utilidades comunes
 """
 
@@ -15,6 +16,7 @@ from .ignore import IgnoreManager
 from .git_ops import GitOperations
 from .stow_ops import StowOperations
 from .conflicts import ConflictResolver
+from .path_utils import PathUtils
 from .utils import SyncLock, setup_logging
 
 __all__ = [
@@ -23,6 +25,7 @@ __all__ = [
     'GitOperations',
     'StowOperations',
     'ConflictResolver',
+    'PathUtils',
     'SyncLock',
     'setup_logging'
 ]

@@ -29,6 +29,10 @@ class DeployCommand:
         # Directorio de backup por hostname
         self.backup_dir = Path.home() / ".sync-arch-backups" / self.hostname
         self.backup_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Importar PathUtils del core
+        from core.path_utils import PathUtils
+        self.path_utils = PathUtils(config_manager, dotfiles_dir, home_dir, self.hostname)
     
     def get_conflicting_files(self) -> List[Dict]:
         """Obtener lista de archivos que necesitan ser reemplazados por symlinks"""
@@ -312,35 +316,8 @@ class DeployCommand:
     
     def _get_managed_paths(self) -> List[Dict]:
         """Obtener todas las rutas gestionadas"""
-        managed_paths = []
-        
-        # Rutas comunes
-        common_paths = self.config.get_common_paths()
-        for path in common_paths:
-            if path == "":  # HOME approach
-                continue
-            normalized = self.config.normalize_path(path)
-            managed_paths.append({
-                'path': path,
-                'normalized': normalized,
-                'source': 'common'
-            })
-        
-        # Rutas específicas del hostname
-        hostname_paths = self.config.get_hostname_paths(self.hostname)
-        for path in hostname_paths:
-            normalized = self.config.normalize_path(path)
-            managed_paths.append({
-                'path': path,
-                'normalized': normalized,
-                'source': self.hostname
-            })
-        
-        return managed_paths
+        return self.path_utils.get_managed_paths(include_system_configs=False)
     
     def _get_repo_path(self, source: str, normalized_path: str) -> Path:
         """Obtener la ruta en el repositorio"""
-        if source == 'common':
-            return self.dotfiles_dir / "common" / "home" / normalized_path
-        else:
-            return self.dotfiles_dir / source / "home" / normalized_path
+        return self.path_utils.get_repo_path(source, normalized_path)
