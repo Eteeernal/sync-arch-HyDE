@@ -6,6 +6,7 @@ Manejo de patrones ignore y lógica de precedencia: hostname > ignore > common
 
 import fnmatch
 import logging
+from pathlib import Path
 from typing import Tuple
 
 logger = logging.getLogger(__name__)
@@ -25,12 +26,68 @@ class IgnoreManager:
         normalized_path = self.config.normalize_path(path)
         
         for pattern in ignore_patterns:
-            # Usar fnmatch para patrones con wildcards
-            if fnmatch.fnmatch(normalized_path, pattern):
+            # Manejar diferentes tipos de patrones
+            if self._match_pattern(normalized_path, pattern):
                 logger.debug(f"Ruta {normalized_path} coincide con patrón ignore: {pattern}")
                 return True
                 
         return False
+
+    def _match_pattern(self, path: str, pattern: str) -> bool:
+        """Verificar si una ruta coincide con un patrón, manejando ** correctamente"""
+        # Normalizar separadores de ruta
+        path = path.replace('\\', '/')
+        pattern = pattern.replace('\\', '/')
+        
+        # Casos especiales para patrones con **
+        if '**' in pattern:
+            return self._match_glob_pattern(path, pattern)
+        else:
+            # Para patrones simples, usar fnmatch
+            return fnmatch.fnmatch(path, pattern)
+    
+    def _match_glob_pattern(self, path: str, pattern: str) -> bool:
+        """Manejar patrones con ** de manera más robusta"""
+        import re
+        
+        # Para patrones que empiezan con **, también verificar sin el prefijo de directorio
+        patterns_to_check = [pattern]
+        
+        # Si el patrón empieza con **/, también probar sin el **/
+        if pattern.startswith('**/'):
+            patterns_to_check.append(pattern[3:])  # Remover **/ del inicio
+        
+        # Si el patrón termina con /**, también probar sin el /**
+        if pattern.endswith('/**'):
+            patterns_to_check.append(pattern[:-3])  # Remover /** del final
+        
+        for test_pattern in patterns_to_check:
+            if self._regex_match(path, test_pattern):
+                return True
+        
+        return False
+    
+    def _regex_match(self, path: str, pattern: str) -> bool:
+        """Convertir patrón glob a regex y verificar coincidencia"""
+        import re
+        
+        # Escapar caracteres especiales regex excepto * y **
+        pattern_escaped = re.escape(pattern)
+        
+        # Reemplazar los ** escapados por regex apropiada (cualquier cosa incluyendo /)
+        pattern_escaped = pattern_escaped.replace('\\*\\*', '.*')
+        
+        # Reemplazar * simples por regex apropiada (cualquier cosa excepto /)
+        pattern_escaped = pattern_escaped.replace('\\*', '[^/]*')
+        
+        # Agregar anchors
+        pattern_regex = f'^{pattern_escaped}$'
+        
+        try:
+            return bool(re.match(pattern_regex, path))
+        except re.error:
+            # Fallback a fnmatch en caso de error
+            return fnmatch.fnmatch(path, pattern)
 
     def is_explicitly_included(self, path: str) -> bool:
         """Verificar si una ruta está explícitamente incluida en hostname específico"""

@@ -44,7 +44,21 @@ class DiscoverCommand:
         # Escanear $HOME
         for root, dirs, files in os.walk(self.home_dir):
             # Excluir directorios que no queremos escanear
-            dirs[:] = [d for d in dirs if not d.startswith('.git') and d not in ['.cache', '.local/share/Trash']]
+            # 1. Directorios de sistema (git, cache, trash)
+            # 2. Directorios que coinciden con patrones ignore
+            filtered_dirs = []
+            for d in dirs:
+                if d.startswith('.git') or d in ['.cache', '.local/share/Trash']:
+                    continue
+                
+                # Verificar si el directorio está en ignore
+                dir_path = Path(root) / d
+                relative_dir_path = str(dir_path.relative_to(self.home_dir))
+                
+                if not self.ignore.should_ignore_path(relative_dir_path):
+                    filtered_dirs.append(d)
+            
+            dirs[:] = filtered_dirs
             
             for item in dirs + files:
                 item_path = Path(root) / item
@@ -55,9 +69,15 @@ class DiscoverCommand:
                 is_managed = False
                 
                 if base_managed:
-                    # Si common gestiona todo, verificar si está ignorado o es específico
-                    should_process, reason = self.ignore.should_process_path(normalized_path)
-                    is_managed = should_process
+                    # Si common gestiona todo, solo mostrar archivos que NO están en ignore
+                    # y que NO están explícitamente en hostname
+                    is_explicitly_managed = self.ignore.is_explicitly_included(normalized_path)
+                    is_ignored = self.ignore.should_ignore_path(normalized_path)
+                    
+                    # Considerar "gestionado" si:
+                    # 1. Está explícitamente incluido en hostname, O
+                    # 2. Está en ignore (no queremos mostrarlo)
+                    is_managed = is_explicitly_managed or is_ignored
                 else:
                     # Verificar si coincide con alguna ruta gestionada
                     for managed_path in managed_paths:
@@ -66,6 +86,10 @@ class DiscoverCommand:
                             managed_path.endswith('/') and normalized_path.startswith(managed_path)):
                             is_managed = True
                             break
+                    
+                    # También verificar si está en ignore (no queremos mostrarlo)
+                    if not is_managed:
+                        is_managed = self.ignore.should_ignore_path(normalized_path)
                 
                 if not is_managed and item_path.exists():
                     unmanaged.append(item_path)
