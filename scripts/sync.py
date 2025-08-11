@@ -22,7 +22,7 @@ from core import (
 from core.utils import HOSTNAME, LOCK_FILE, PROJECT_ROOT
 
 # Imports de comandos
-from commands import DiscoverCommand, SyncModes, StatusCommand
+from commands import DiscoverCommand, SyncModes, StatusCommand, CleanupCommand
 
 # Rutas globales derivadas
 DOTFILES_DIR = PROJECT_ROOT / "dotfiles"
@@ -55,6 +55,7 @@ class SyncArch:
             self.stow_ops, self.conflict_resolver, force_overwrite
         )
         self.status_cmd = StatusCommand(self.config_manager, self.ignore_manager, self.git_ops)
+        self.cleanup_cmd = CleanupCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, dry_run)
     
     def run_startup(self) -> bool:
         """Ejecutar sincronización de startup"""
@@ -77,11 +78,15 @@ class SyncArch:
         """Ejecutar comando status"""
         self.status_cmd.show_status()
         return True
+    
+    def run_cleanup(self) -> bool:
+        """Ejecutar comando cleanup"""
+        return self.cleanup_cmd.run_cleanup()
 
 def main():
     """Función principal"""
     parser = argparse.ArgumentParser(description="Sync-Arch: Sincronización inteligente de dotfiles")
-    parser.add_argument('--mode', choices=['startup', 'shutdown', 'manual', 'discover', 'status'], 
+    parser.add_argument('--mode', choices=['startup', 'shutdown', 'manual', 'discover', 'status', 'cleanup'], 
                         default='manual', help='Modo de operación')
     parser.add_argument('--dry-run', action='store_true', default=True,
                         help='Ejecutar en modo simulación (por defecto)')
@@ -118,6 +123,8 @@ def main():
                 success = sync.run_discover()
             elif args.mode == 'status':
                 success = sync.run_status()
+            elif args.mode == 'cleanup':
+                success = sync.run_cleanup()
             else:
                 print(f"❌ Modo desconocido: {args.mode}")
                 sys.exit(1)
