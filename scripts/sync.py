@@ -22,7 +22,7 @@ from core import (
 from core.utils import HOSTNAME, LOCK_FILE, PROJECT_ROOT
 
 # Imports de comandos
-from commands import DiscoverCommand, SyncModes, StatusCommand, CleanupCommand, ValidateCommand
+from commands import DiscoverCommand, SyncModes, StatusCommand, CleanupCommand, ValidateCommand, DeployCommand
 
 # Rutas globales derivadas
 DOTFILES_DIR = PROJECT_ROOT / "dotfiles"
@@ -57,6 +57,7 @@ class SyncArch:
         self.status_cmd = StatusCommand(self.config_manager, self.ignore_manager, self.git_ops)
         self.cleanup_cmd = CleanupCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, dry_run)
         self.validate_cmd = ValidateCommand(self.config_manager, self.ignore_manager, DOTFILES_DIR, HOME, dry_run)
+        self.deploy_cmd = DeployCommand(self.config_manager, self.ignore_manager, self.stow_ops, DOTFILES_DIR, HOME, dry_run)
     
     def run_startup(self) -> bool:
         """Ejecutar sincronización de startup"""
@@ -87,12 +88,26 @@ class SyncArch:
     def run_validate(self) -> bool:
         """Ejecutar comando validate"""
         return self.validate_cmd.run_validation()
+    
+    def run_deploy(self) -> bool:
+        """Ejecutar comando deploy"""
+        return self.deploy_cmd.run_deploy()
+    
+    def run_rollback(self, backup_name: str = None) -> bool:
+        """Ejecutar rollback"""
+        return self.deploy_cmd.rollback(backup_name)
+    
+    def run_list_backups(self) -> bool:
+        """Listar backups disponibles"""
+        self.deploy_cmd.list_backups()
+        return True
 
 def main():
     """Función principal"""
     parser = argparse.ArgumentParser(description="Sync-Arch: Sincronización inteligente de dotfiles")
-    parser.add_argument('--mode', choices=['startup', 'shutdown', 'manual', 'discover', 'status', 'cleanup', 'validate'], 
+    parser.add_argument('--mode', choices=['startup', 'shutdown', 'manual', 'discover', 'status', 'cleanup', 'validate', 'deploy', 'rollback', 'list-backups'], 
                         default='manual', help='Modo de operación')
+    parser.add_argument('--backup-name', type=str, help='Nombre del backup para rollback')
     parser.add_argument('--dry-run', action='store_true', default=True,
                         help='Ejecutar en modo simulación (por defecto)')
     parser.add_argument('--force', action='store_true',
@@ -132,6 +147,12 @@ def main():
                 success = sync.run_cleanup()
             elif args.mode == 'validate':
                 success = sync.run_validate()
+            elif args.mode == 'deploy':
+                success = sync.run_deploy()
+            elif args.mode == 'rollback':
+                success = sync.run_rollback(args.backup_name)
+            elif args.mode == 'list-backups':
+                success = sync.run_list_backups()
             else:
                 print(f"❌ Modo desconocido: {args.mode}")
                 sys.exit(1)

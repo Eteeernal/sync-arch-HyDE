@@ -7,6 +7,7 @@ Comandos disponibles:
 - status: Estado del repositorio
 - cleanup: Limpieza de archivos ignorados en el repositorio
 - validate: Validación de consistencia entre config.json, repo y $HOME
+- deploy: Despliegue seguro de symlinks con backup automático
 """
 
 from .discover import DiscoverCommand
@@ -14,11 +15,13 @@ from .sync_modes import SyncModes
 from .status import StatusCommand
 from .cleanup import CleanupCommand
 from .validate import ValidateCommand
+from .deploy import DeployCommand
 
 __all__ = [
     'DiscoverCommand',
     'SyncModes', 
     'StatusCommand',
     'CleanupCommand',
-    'ValidateCommand'
+    'ValidateCommand',
+    'DeployCommand'
 ]
